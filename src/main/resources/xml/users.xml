@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<users>
+    <user id="d2a68206-a2e9-4b4f-ae9b-f298b20d37f3">
+        <username>admin</username>
+        <password>21232f297a57a5a743894a0e4a801fc3</password>
+        <group>Administrators</group>
+        <email>asd@asd.zxc</email>
+    </user>
+    <user id="ec77d4a3-156a-4464-bc9e-ed9835661b75">
+        <username>user</username>
+        <password>ee11cbb19052e40b07aac0ca060c23ee</password>
+        <group>Users</group>
+        <email>qwe@asd.zxc</email>
+    </user>
+    <user id="43ba8dcf-bb04-4d69-95e6-0d231868b81b">
+        <username>hacker</username>
+        <password>xxx</password>
+        <group>Administrators</group>
+        <email>fu@qwe.asd</email>
+    </user>
+    <user id="2fb9e103-f8ab-4d2a-b0ac-18bc97f0610f">
+        <username>hacker&lt;/username&gt;&lt;!--</username>
+        <password>37a6259cc0c1dae299a7866489dff0bd</password>
+        <group>Users</group>
+        <email>--&gt;&lt;password&gt;xxx&lt;/password&gt;&lt;group&gt;Administrators&lt;/group&gt;&lt;email&gt;fu@qwe.asd</email>
+    </user>
+	<user id="57560c7e-e943-4e83-b3f7-8de0b210d6a7">
+		<username>hacker&lt;/username&gt;&lt;!--</username>
+		<password>37a6259cc0c1dae299a7866489dff0bd</password>
+		<group>Users</group>
+		<email>--&gt;&lt;password&gt;xxx&lt;/password&gt;&lt;group&gt;Administrators&lt;/group&gt;&lt;email&gt;fu@qwe.asd</email>
+	</user>
+	<user id="5ca3332d-4f44-4559-af72-cf462b3cc131">
+		<username>hacker</username><!--</username>
+		<password>37a6259cc0c1dae299a7866489dff0bd</password>
+		<group>Users</group>
+		<email>--><password>xxx</password><group>Administrators</group><email>fu@qwe.asd</email>
+	</user>
+	<user id="cf156d1d-353f-4d01-b9b3-972f5d5e31b3">
+		<username>hacker</username><!--</username>
+		<password>37a6259cc0c1dae299a7866489dff0bd</password>
+		<group>Users</group>
+		<email>--><password>xxx</password><group>Administrators</group><email>fu@qwe.asd</email>
+	</user>
+	<user id="84cdd8c0-9744-4d63-a434-cc152f860d2c">
+		<username>hacker&lt;/username&gt;&lt;!--</username>
+		<password>37a6259cc0c1dae299a7866489dff0bd</password>
+		<group>Users</group>
+		<email>--&gt;&lt;password&gt;xxx&lt;/password&gt;&lt;group&gt;Administrators&lt;/group&gt;&lt;email&gt;fu@qwe.asd</email>
+	</user>
+</users>
