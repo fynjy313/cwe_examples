@@ -1,7 +1,7 @@
 package com.example.cwe.xml_injecions;
 
-import com.example.cwe.xml_injecions.dto.User;
-import com.example.cwe.xml_injecions.dto.Users;
+import com.example.cwe.xml_injecions.pojo.User;
+import com.example.cwe.xml_injecions.pojo.Users;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.web.util.HtmlUtils;

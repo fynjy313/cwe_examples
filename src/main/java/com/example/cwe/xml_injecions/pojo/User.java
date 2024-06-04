@@ -1,4 +1,4 @@
-package com.example.cwe.xml_injecions.dto;
+package com.example.cwe.xml_injecions.pojo;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

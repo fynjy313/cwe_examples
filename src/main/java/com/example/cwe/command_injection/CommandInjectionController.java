@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-@RestController/*(value = "/cmd")*/
-@RequestMapping(value = "cmd")
+@RestController
+@RequestMapping("cmd")
 public class CommandInjectionController {
 
     @GetMapping("ping")

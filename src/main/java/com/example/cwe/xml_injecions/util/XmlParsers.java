@@ -1,46 +1,31 @@
 package com.example.cwe.xml_injecions.util;
 
-import com.example.cwe.xml_injecions.dto.User;
+import com.example.cwe.xml_injecions.pojo.User;
+import com.example.cwe.xml_injecions.pojo.Users;
 import org.dom4j.DocumentException;
 import org.dom4j.io.SAXReader;
-import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.namespace.QName;
 import javax.xml.parsers.*;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class XmlParsers {
     //DOM parser
-    public static List<User> domParseUserXml(String xmlPath) throws ParserConfigurationException, IOException, SAXException {
-        List<User> users = new ArrayList<>();
+    public static Users domParseUserXml(String xml) throws ParserConfigurationException, IOException, SAXException {
+        Users users = new Users();
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         // This is the PRIMARY defense. If DTDs (doctypes) are disallowed, almost all
         // XML entity attacks are prevented. Disable Future when exploit XXE
 //        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 
         DocumentBuilder builder = dbf.newDocumentBuilder();
-        Document document = builder.parse(new File(xmlPath));
+        Document document = builder.parse(new InputSource(new StringReader(xml)));
         document.getDocumentElement().normalize();
         NodeList nodeList = document.getElementsByTagName("user");
         for (int i = 0; i < nodeList.getLength(); i++) {
@@ -53,24 +38,27 @@ public class XmlParsers {
                         element.getElementsByTagName("group").item(0).getTextContent(),
                         UUID.fromString(element.getAttribute("id")),
                         element.getElementsByTagName("email").item(0).getTextContent());
-                users.add(user);
+                users.addUser(user);
             }
         }
         return users;
     }
 
-    public static final String xxe = "src/main/resources/xml/xxe_exp1.xml";
 
-    @Test
-    public void SAXReaderVuln() throws IOException, DocumentException {
+    public static final String xxe = "src/main/resources/xml/xxe_exp.xml";
 
-        //String body = WebUtils.getRequestBody(request);
+
+    public static String SaxParseUserXmlToString(String xml) throws IOException, DocumentException, SAXException {
 
         SAXReader reader = new SAXReader();
-        // org.dom4j.Document document
-        reader.read(new InputSource(new StringReader(String.join("\n", Files.readAllLines(Path.of(xxe)))))); // cause xxe
+//        reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+//        reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+//        reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
 
+        org.dom4j.Document document = reader.read(new InputSource(new StringReader(xml)));
+        return document.asXML();
     }
+
 
 /*
 

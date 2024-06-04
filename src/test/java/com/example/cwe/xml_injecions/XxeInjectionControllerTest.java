@@ -1,6 +1,6 @@
 package com.example.cwe.xml_injecions;
 
-import com.example.cwe.xml_injecions.dto.User;
+import com.example.cwe.xml_injecions.pojo.User;
 import org.testng.annotations.Test;
 
 import javax.xml.bind.JAXBContext;
@@ -33,7 +33,7 @@ public class XxeInjectionControllerTest {
     }
 
     /**
-     * Works fine with non system schema's
+     * Works fine with non system entities
      */
     @Test
     void xxeLolUnmarshall() throws JAXBException {
@@ -42,7 +42,6 @@ public class XxeInjectionControllerTest {
         //unmarshaller.setProperty(javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD, "all");
         System.out.println((User) unmarshaller.unmarshal(new File(xxe1)));
     }
-
 
 
 }

