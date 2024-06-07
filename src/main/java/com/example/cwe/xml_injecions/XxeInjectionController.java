@@ -26,9 +26,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.UUID;
 
 /**
@@ -180,31 +185,37 @@ public class XxeInjectionController {
     }
 
 
-    // Все что ниже - только для проверки XInclude, но не работает!
-    //    <?xml version="1.0" encoding="UTF-8"?>
-    //<foo xmlns:xi="http://www.w3.org/2001/XInclude">
-    //    <xi:include parse="text" href="file:///c:/temp/secrets.txt"/>
-    //</foo>
-    @PostMapping(value = "saxbuild-unsafe",
-            consumes = MediaType.APPLICATION_XML_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-    @ResponseStatus(HttpStatus.CREATED)
-    public void saxBuildUnsafe(@RequestBody String xml, HttpServletResponse response) throws ParserConfigurationException, IOException, SAXException, DocumentException, JDOMException {
-        SAXBuilder builder = new SAXBuilder();
-        org.jdom2.Document document = builder.build(new InputSource(new StringReader(xml)));
-        response.getWriter().write(document.toString());
-    }
+    /**
+     * Только для проверки XInclude
+     * <?xml version="1.0" encoding="UTF-8"?>
+     * <foo xmlns:xi="http://www.w3.org/2001/XInclude">
+     * <xi:include parse="text" href="file:///c:/temp/secrets.txt"/>
+     * </foo>
+     */
 
-    @PostMapping(value = "spf-unsafe",
+    @PostMapping(value = "xinclude-unsafe",
             consumes = MediaType.APPLICATION_XML_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public void spfUnsafe(@RequestBody String xml, HttpServletRequest request, HttpServletResponse response) throws ParserConfigurationException, IOException, SAXException, DocumentException, JDOMException {
+    public void xincludeUnsafe(@RequestBody String xml, HttpServletResponse response) throws Exception {
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+
+        dbf.setXIncludeAware(true);
+        dbf.setNamespaceAware(true);
+
         DocumentBuilder db = dbf.newDocumentBuilder();
-        InputSource is = new InputSource(request.getInputStream());
         Document document = db.parse(new InputSource(new StringReader(xml)));  // parse xml
 
-        response.getWriter().write(document.toString());
+        response.getWriter().write(printXML(document));
+    }
+
+    private static String printXML(final Document responseDoc) throws Exception {
+        DOMSource domSource = new DOMSource(responseDoc);
+        StringWriter stringWriter = new StringWriter();
+        StreamResult streamResult = new StreamResult(stringWriter);
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        transformerFactory.newTransformer().transform(domSource, streamResult);
+        return stringWriter.toString();
     }
 
 
