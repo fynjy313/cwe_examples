@@ -1,15 +1,17 @@
 package com.example.cwe.path_traversal;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Date;
 
 @RestController
 @RequestMapping("path-traversal")
@@ -69,13 +71,22 @@ public class PathTraversalController {
     }
 
 
-    @Autowired
-    ResourceLoader resourceLoader;
+    @PostMapping("upload-image-unsafe")
+    public ResponseEntity<?> uploadImageUnsafe(@RequestParam("file") MultipartFile file) {
+        if (file == null) return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("File missing");
+        try {
+            String requestFileName = file.getOriginalFilename();
+            File resultFile = new File(System.getProperty("java.io.tmpdir") + requestFileName);
 
+            file.transferTo(resultFile);
 
-    //TODO:
-    @PostMapping
-    public void uploadImage() {
+            String result = String.format("%s\tFile with requestFileName %s transferred to %s (resultPath: %s)"
+                    , new Date(), requestFileName, resultFile, resultFile.getCanonicalPath());
 
+            return ResponseEntity.ok().body(result);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 }

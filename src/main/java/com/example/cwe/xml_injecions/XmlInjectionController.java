@@ -26,10 +26,9 @@ import java.util.UUID;
 public class XmlInjectionController {
     public static final String XML_PATH = "src/main/resources/xml/users.xml";
 
-    @GetMapping("users")
+    @GetMapping(value = "users", produces = MediaType.APPLICATION_XML_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public void getAllUsers(HttpServletResponse response) throws IOException {
-        response.setContentType("text/xml");
         response.setCharacterEncoding(Charset.defaultCharset().name());
         response.getWriter().write(Files.readAllLines(Path.of(XML_PATH)).toString());
     }
