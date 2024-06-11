@@ -15,32 +15,32 @@ import java.util.Date;
 
 @RestController
 @RequestMapping("path-traversal")
+@SuppressWarnings("unused")
 public class PathTraversalController {
     static final String BASE_DIRECTORY = "c:\\temp\\";
 
 
     @GetMapping("download-image-unsafe")
     public void downloadImageUnsafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
-        //TODO: getClass().getResourceAsStream(filename)
 
         File f = new File(BASE_DIRECTORY + fileName);
 
         if (f.exists() && !f.isDirectory()) {
+
             MediaType mediaType = MediaTypeFactory.getMediaType(fileName)
                     .orElse(MediaType.APPLICATION_OCTET_STREAM);
 
-//            ContentDisposition disposition = ContentDisposition
-//                    .inline() // or .attachment()
-//                    .filename(f.getName())
-//                    .build();
-//            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, disposition.toString());
+            /*ContentDisposition disposition = ContentDisposition
+                    .inline() // or .attachment()
+                    .filename(f.getName()).build();
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, disposition.toString());*/
 
             response.setContentType(mediaType.toString());
             response.setHeader("Content-Disposition", "attachment; filename=" + f.getName());
 
             response.getOutputStream()
-                    .write(("Resolved file name: " + f + "\n" + "Canonical pathname: " + f.getCanonicalPath() + "\n\n")
-                            .getBytes());
+                    .write(("Resolved file name: " + f + "\n" + "Canonical pathname: "
+                            + f.getCanonicalPath() + "\n\n").getBytes());
             response.getOutputStream().write(Files.readAllBytes(f.toPath()));
         } else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -64,8 +64,8 @@ public class PathTraversalController {
             response.setContentType(mediaType.toString());
             response.setHeader("Content-Disposition", "attachment; filename=" + f.getName());
             response.getOutputStream()
-                    .write(("Resolved file name: " + f + "\n" + "Canonical pathname: " + f.getCanonicalPath() + "\n\n")
-                            .getBytes());
+                    .write(("Resolved file name: " + f + "\n" + "Canonical pathname: "
+                            + f.getCanonicalPath() + "\n\n").getBytes());
             response.getOutputStream().write(Files.readAllBytes(f.toPath()));
         }
     }
@@ -89,4 +89,30 @@ public class PathTraversalController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
+
+    @PostMapping("upload-image-safe")
+    public ResponseEntity<?> uploadImageSafe(@RequestParam("file") MultipartFile file) throws IOException {
+        if (file == null) return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("File missing");
+
+        String requestFileName = file.getOriginalFilename();
+
+        if (!checkFileName(requestFileName)) {
+            return ResponseEntity.internalServerError().body("Не валидное имя файла: " + requestFileName);
+        }
+        requestFileName = requestFileName.replaceAll("\\.\\.", "");
+
+        File resultFile = new File(System.getProperty("java.io.tmpdir") + requestFileName);
+        file.transferTo(resultFile);
+
+        String result = String.format("%s\tFile with requestFileName %s transferred to %s (resultPath: %s)"
+                , new Date(), requestFileName, resultFile, resultFile.getCanonicalPath());
+
+        return ResponseEntity.ok().body(result);
+    }
+
+    static boolean checkFileName(final String fileName) {
+        final String pattern = "^[A-Za-z0-9.\\-\\_]{1,255}$";
+        return fileName.matches(pattern);
+    }
+
 }
