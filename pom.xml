@@ -38,18 +38,6 @@
             <version>1.2</version>
         </dependency>
         <!-- XML -->
-        <!--        <dependency>-->
-        <!--            <groupId>net.sf.saxon</groupId>-->
-        <!--            <artifactId>Saxon-HE</artifactId>-->
-        <!--            <version>10.5</version>-->
-        <!--        </dependency>-->
-        <!-- https://mvnrepository.com/artifact/com.saxonica/Saxon-PE -->
-        <!--        <dependency>-->
-        <!--            <groupId>com.saxonica</groupId>-->
-        <!--            <artifactId>Saxon-PE</artifactId>-->
-        <!--            <version>12.2</version>-->
-        <!--        </dependency>-->
-        <!-- https://mvnrepository.com/artifact/org.dom4j/dom4j -->
         <dependency>
             <groupId>org.dom4j</groupId>
             <artifactId>dom4j</artifactId>
@@ -62,8 +50,8 @@
             <version>2.0.6.1</version>
         </dependency>
 
-        <!--        Чтобы не добавлять каждый раз SaxonHE12-4J через ПКМ, написал сюда
-        либа постоянно слетает при обновлении пом файла
+        <!--        Чтобы не добавлять каждый раз SaxonHE12-4J через ПКМ, написал сюда.
+        Иначе либа постоянно слетает при обновлении пом файла
         -->
         <dependency>
             <groupId>net.sf.saxon</groupId>
@@ -108,19 +96,6 @@
             <version>1.10.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>7.1.0</version>
-            <!--            <scope>compile</scope>-->
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-
         <!--SQLi-->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -131,15 +106,29 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
-
-
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!--SQLi-->
 
+<!--        <dependency>-->
+<!--            <groupId>mysql</groupId>-->
+<!--            <artifactId>mysql-connector-java</artifactId>-->
+<!--            <scope>runtime</scope>-->
+<!--        </dependency>-->
+
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>7.1.0</version>
+            <!--            <scope>compile</scope>-->
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>junit</groupId>-->
+<!--            <artifactId>junit</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
 
     </dependencies>
 

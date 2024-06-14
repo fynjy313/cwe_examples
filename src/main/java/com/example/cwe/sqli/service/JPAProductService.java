@@ -2,7 +2,7 @@ package com.example.cwe.sqli.service;
 
 
 import com.example.cwe.sqli.entity.Product;
-import com.example.cwe.sqli.repository.ProductRepository;
+import com.example.cwe.sqli.repository.JpaProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +19,7 @@ the Student / Create or Update the Student from the database.*/
 @Service
 public class JPAProductService {
     @Autowired
-    private ProductRepository repository;
+    private JpaProductRepository repository;
 
     //Native Query
     public Product saveProduct(Product product) {
@@ -58,9 +58,9 @@ public class JPAProductService {
 
     //==============================================
     //JPQL
-    public List<Product> findAll_JPQL() {
-        return repository.findAll_JPQL();
-    }
+//    public List<Product> findAll_JPQL() {
+//        return repository.findAll_JPQL();
+//    }
 
     //Native JPQL
     public List<Product> findByName_JPQL_native(String name) {
@@ -68,14 +68,14 @@ public class JPAProductService {
     }
 
     //Positional Parameters
-    public List<Product> findByName_JPQL(String name) {
+    public List<Product> findByName_JPQL_pos_param(String name) {
 
-        return repository.findByName_JPQL(name);
+        return repository.findByName_JPQL_pos_param(name);
     }
 
     //Named Parameters
-    public List<Product> findByName_JPQL_param(String name) {
-        return repository.findByName_JPQL_param(name);
+    public List<Product> findByName_JPQL_name_param(String name) {
+        return repository.findByName_JPQL_name_param(name);
     }
 
     //unsafeJpa
