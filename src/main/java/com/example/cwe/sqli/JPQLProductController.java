@@ -67,7 +67,7 @@ public class JPQLProductController {
      *
      * @param name Название товара
      */
-    @GetMapping("products-jpql-byName-native/{name}")
+    @GetMapping("products-byName-native/{name}")
     public List<Product> findByName_JPQL_native(@PathVariable String name) {
         return serviceJPA.findByName_JPQL_native(name);
     }
@@ -82,7 +82,7 @@ public class JPQLProductController {
      *
      * @param name Название товара
      */
-    @GetMapping("products-jpql-byName-posParam/{name}")
+    @GetMapping("products-byName-posParam/{name}")
     public List<Product> findByName_JPQL_pos_param(@PathVariable String name) {
         return serviceJPA.findByName_JPQL_pos_param(name);
     }
@@ -94,7 +94,7 @@ public class JPQLProductController {
      *
      * @param name Название товара
      */
-    @GetMapping("products-jpql-byName-nameParam/{name}")
+    @GetMapping("products-byName-nameParam/{name}")
     public List<Product> findByName_JPQL_name_param(@PathVariable String name) {
         return serviceJPA.findByName_JPQL_name_param(name);
     }
