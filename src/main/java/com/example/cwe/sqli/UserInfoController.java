@@ -1,20 +1,20 @@
 package com.example.cwe.sqli;
 
+import com.example.cwe.sqli.entity.AuthLoginForm;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.sql.*;
 
 @RestController
-@RequestMapping("sqli/auth")
-public class UserAuthController {
-    private static final String url = "jdbc:mysql://192.168.10.12:33060/DB1";
-    private static final String sql_user = "user";
-    private static final String sql_password = "resu";
+@RequestMapping("sqli/user-info")
+public class UserInfoController {
+    private static final String url = "jdbc:h2:file:./data/demo;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE;";
+    private static final String sql_user = "sa";
+    private static final String sql_password = "";
 
     private static Connection connection;
     private static Statement statement;
@@ -22,92 +22,110 @@ public class UserAuthController {
     private static CallableStatement callableStatement;
     private static ResultSet resultSet;
 
-    public static void main(String[] args) {
+    //SQL injection: user' or '1'='1' --
+    @PostMapping(value = "statement", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getUserInfoWithStatement(@RequestBody AuthLoginForm loginForm) {
 
-        UserLogin user = UserLogin.createUser();
-        user.loginFromConsole();
+        if (!exist(loginForm)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Empty login/password");
+        }
 
-        //user.sanitize();
-        //user.loginFromUrl(url_str);
+        String query = "SELECT id, userName, email, cash FROM Wallets WHERE username = '" + loginForm.username() +
+                "' AND password = '" + DigestUtils.md5Hex(loginForm.password()) + "'";
 
-        queryAndStatement(user);
-        queryAndPreparedStatement(user);
-        callableProcedure(user);
-        queryAndWhitelist(user);
-        queryESAPI(user);
+        try (Connection connection = DriverManager.getConnection(url, sql_user, sql_password);
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
 
-    }
+            System.out.println("\nYour query: " + query);
 
-    public static void queryAndStatement(UserLogin user) {
-        if (exist(user)) {
-            String query = "SELECT id, userName, email, cash FROM users2 WHERE userName = '" + user.userName +
-                    "' AND password_md5 = '" + DigestUtils.md5Hex(user.password) + "'";
-            try {
-                connection = DriverManager.getConnection(url, sql_user, sql_password);
-                statement = connection.createStatement();
-                System.out.println("\nYour query: " + query);//try "user' or '1'='1' -- "
-                resultSet = statement.executeQuery(query);
-                System.out.println("Результат SQL запроса с помощью Statement:\n");
+            return ResponseEntity.ok("Query: " + query + "\n" +
+                    "Результат SQL запроса с помощью Statement:\n" + printResult(resultSet));
 
-                while (resultSet.next()) {
-                    printResult(resultSet);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (connection != null) connection.close();
-                } catch (SQLException ignored) {
-                }
-                try {
-                    if (statement != null) statement.close();
-                } catch (SQLException ignored) {
-                }
-                try {
-                    if (resultSet != null) resultSet.close();
-                } catch (SQLException ignored) {
-                }
-            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("SQLException: " + e.getMessage()); //bad idea, only for exp
         }
     }
 
-    public static void queryAndPreparedStatement(UserLogin user) {
-        if (exist(user)) {
-            String query = "SELECT id, userName, email, cash FROM users2 WHERE userName = ? AND password_md5 = ?";
-            try {
-                connection = DriverManager.getConnection(url, sql_user, sql_password);
-                preparedStatement = connection.prepareStatement(query);
-                preparedStatement.setString(1, user.userName);
-                preparedStatement.setString(2, DigestUtils.md5Hex(user.password));
+    @PostMapping(value = "prepared-statement", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getUserInfoWithPreparedStatement(@RequestBody AuthLoginForm loginForm) {
 
-                String str = preparedStatement.toString();
-                System.out.println("\nYour query: " + str.substring(str.indexOf(":") + 2));
+        if (!exist(loginForm)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Empty login/password");
+        }
 
-                resultSet = preparedStatement.executeQuery();
-                System.out.println("Результат SQL запроса с помощью Prepared Statement:\n");
+        String query = "SELECT id, userName, email, cash FROM Wallets WHERE username = ? AND password = ?";
 
-                while (resultSet.next()) {
-                    printResult(resultSet);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (connection != null) connection.close();
-                } catch (SQLException ignored) {
-                }
-                try {
-                    if (preparedStatement != null) preparedStatement.close();
-                } catch (SQLException ignored) {
-                }
-                try {
-                    if (resultSet != null) resultSet.close();
-                } catch (SQLException ignored) {
-                }
-            }
+        try (Connection connection = DriverManager.getConnection(url, sql_user, sql_password);
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, loginForm.username());
+            statement.setString(2, DigestUtils.md5Hex(loginForm.password()));
+
+            ResultSet resultSet = statement.executeQuery();
+            query = statement.toString().substring(query.indexOf(":") + 2);
+
+            return ResponseEntity.ok("Query: " + query + "\n" +
+                    "Результат SQL запроса с помощью Prepared Statement:\n" + printResult(resultSet));
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("SQLException: " + e.getMessage()); //bad idea, only for exp
         }
     }
 
+
+    //TODO: callable statement
+
+    @PostMapping(value = "callable-statement", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> getUserInfoWithCallableStatement(@RequestBody AuthLoginForm loginForm) {
+        if (!exist(loginForm)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Empty login/password");
+        }
+
+        String query = "SELECT id, userName, email, cash FROM Wallets WHERE username = ? AND password = ?";
+
+        try (Connection connection = DriverManager.getConnection(url, sql_user, sql_password);
+             CallableStatement statement = connection.prepareCall("{call userinfo(?,?)}")) {
+
+            statement.setString(1, loginForm.username());
+            statement.setString(2, DigestUtils.md5Hex(loginForm.password()));
+
+            ResultSet resultSet = statement.executeQuery();
+
+            System.out.println("\nРезультат SQL запроса с помощью Callable Procedure:\n");
+
+            query = statement.toString().substring(query.indexOf(":") + 2);
+
+            return ResponseEntity.ok("Query: " + query + "\n" +
+                    "Результат SQL запроса с помощью Callable Procedure:\n" + printResult(resultSet));
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("SQLException: " + e.getMessage()); //bad idea, only for exp
+        }
+    }
+
+    private static boolean exist(AuthLoginForm loginForm) {
+        return (loginForm.username() != null) && (!loginForm.username().isEmpty())
+                && (loginForm.password() != null) && (!loginForm.password().isEmpty());
+    }
+
+    public static String printResult(ResultSet resultSet) throws SQLException {
+        StringBuilder sb = new StringBuilder();
+        while (resultSet.next()) {
+            sb.append(String.format("User ID: [%d]\t|\tUsername: [%s]\t|\temail: [%s]\t|\t$cash: [%d]\n",
+                    resultSet.getInt("id"),
+                    resultSet.getString("username"),
+                    resultSet.getString("email"),
+                    resultSet.getInt("cash")));
+        }
+        return sb.toString();
+    }
+
+
+/*
     public static void callableProcedure(UserLogin user) {
         if (exist(user)) {
             try {
@@ -245,6 +263,6 @@ public class UserAuthController {
                 resultSet.getString("userName"),
                 resultSet.getString("email"),
                 resultSet.getInt("cash"));
-    }
+    }*/
 
 }

@@ -4,8 +4,6 @@ import com.example.cwe.xml_injecions.pojo.User;
 import com.example.cwe.xml_injecions.pojo.Users;
 import org.dom4j.DocumentException;
 import org.dom4j.io.SAXReader;
-import org.jdom2.JDOMException;
-import org.jdom2.input.SAXBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +14,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXB;
@@ -26,7 +23,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
@@ -55,7 +51,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("xxe")
 public class XxeInjectionController {
-    //TODO: XInclude attacks example!
 
     /**
      * javax.xml.bind.UnmarshalException - with linked exception: [org.xml.sax.SAXParseException]
@@ -65,16 +60,14 @@ public class XxeInjectionController {
      * Отключено с java 1.7:
      * <a href="https://docs.oracle.com/javase/7/docs/api/javax/xml/XMLConstants.html#ACCESS_EXTERNAL_SCHEMA">...</a>
      * <p>
-     * Отлично работает с не "system" сущностями
+     * Необходимо только для демонстрации <!ENTITY xxe SYSTEM "file:///c:/windows/system32/drivers/etc/hosts" >
+     * Отлично работает с не "system" сущностями, например, lol
      */
     @PostMapping(value = "unmarshall-full-unsafe",
             consumes = MediaType.APPLICATION_XML_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public void xxeFileUnmarshallUnsafe(@RequestBody String xml, HttpServletResponse response) throws JAXBException, IOException {
-        // Необходимо только для демонстрации <!ENTITY xxe SYSTEM "file:///c:/windows/system32/drivers/etc/hosts" >
-        // с сущностями типа "lol" работает по умолчанию
         System.setProperty("javax.xml.accessExternalDTD", "all");
-
         User user = JAXB.unmarshal(new StringReader(xml), User.class);
         response.getWriter().write(user.toString());
     }
