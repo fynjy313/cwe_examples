@@ -32,6 +32,11 @@ public class HibernateProductController {
         return repository.findByName_HQL_unsafe(name);
     }
 
+    @GetMapping("/products-byName-class-unsafe/{name}")
+    public List<Product> findProductByClassName_HQL_unsafe(@PathVariable String name) {
+        return repository.findProductByClassName_HQL_unsafe(name);
+    }
+
     @GetMapping("/products-byName-safety/{name}")
     public List<Product> findByName_HQL_safety(@PathVariable String name) {
         return repository.findByName_HQL_safety(name);

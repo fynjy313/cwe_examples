@@ -1,11 +1,13 @@
 package com.example.cwe.sqli;
 
 import com.example.cwe.sqli.entity.AuthLoginForm;
+import org.apache.commons.codec.Encoder;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.*;
 
@@ -16,13 +18,21 @@ public class UserInfoController {
     private static final String sql_user = "sa";
     private static final String sql_password = "";
 
-    private static Connection connection;
-    private static Statement statement;
-    private static PreparedStatement preparedStatement;
-    private static CallableStatement callableStatement;
-    private static ResultSet resultSet;
+    //TODO: all params from property file
+    @GetMapping("/")
+    ModelAndView loginTest() {
+        return new ModelAndView("login.jsp");
+    }
 
-    //SQL injection: user' or '1'='1' --
+
+    /**
+     * POST /sqli/user-info/statement
+     * SQL injection example:
+     * {
+     * "username": "admin' or '1'='1' --",
+     * "password": " "
+     * }
+     */
     @PostMapping(value = "statement", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getUserInfoWithStatement(@RequestBody AuthLoginForm loginForm) {
 
@@ -30,14 +40,13 @@ public class UserInfoController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Empty login/password");
         }
 
-        String query = "SELECT id, userName, email, cash FROM Wallets WHERE username = '" + loginForm.username() +
-                "' AND password = '" + DigestUtils.md5Hex(loginForm.password()) + "'";
+        String query = "SELECT id, userName, email, cash FROM Wallets WHERE username = '"
+                + loginForm.username() + "' AND password = '"
+                + DigestUtils.md5Hex(loginForm.password()) + "'";
 
         try (Connection connection = DriverManager.getConnection(url, sql_user, sql_password);
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
-
-            System.out.println("\nYour query: " + query);
 
             return ResponseEntity.ok("Query: " + query + "\n" +
                     "Результат SQL запроса с помощью Statement:\n" + printResult(resultSet));
@@ -48,12 +57,19 @@ public class UserInfoController {
         }
     }
 
+    /**
+     * POST /sqli/user-info/prepared-statement
+     * No SQL injection:
+     * {
+     * "username": "admin' or '1'='1' --",
+     * "password": " "
+     * }
+     */
     @PostMapping(value = "prepared-statement", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getUserInfoWithPreparedStatement(@RequestBody AuthLoginForm loginForm) {
 
-        if (!exist(loginForm)) {
+        if (!exist(loginForm))
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Empty login/password");
-        }
 
         String query = "SELECT id, userName, email, cash FROM Wallets WHERE username = ? AND password = ?";
 
@@ -76,27 +92,23 @@ public class UserInfoController {
     }
 
 
-    //TODO: callable statement
+    //callable statement example in H2DB:
+    //https://stackoverflow.com/questions/11718865/stored-procedure-in-h2-database
+    //The example below only works in mysql and similar databases.
 
-    @PostMapping(value = "callable-statement", consumes = MediaType.APPLICATION_JSON_VALUE)
+    //@PostMapping(value = "callable-statement", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getUserInfoWithCallableStatement(@RequestBody AuthLoginForm loginForm) {
         if (!exist(loginForm)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Empty login/password");
         }
-
-        String query = "SELECT id, userName, email, cash FROM Wallets WHERE username = ? AND password = ?";
 
         try (Connection connection = DriverManager.getConnection(url, sql_user, sql_password);
              CallableStatement statement = connection.prepareCall("{call userinfo(?,?)}")) {
 
             statement.setString(1, loginForm.username());
             statement.setString(2, DigestUtils.md5Hex(loginForm.password()));
-
             ResultSet resultSet = statement.executeQuery();
-
-            System.out.println("\nРезультат SQL запроса с помощью Callable Procedure:\n");
-
-            query = statement.toString().substring(query.indexOf(":") + 2);
+            String query = statement.toString();
 
             return ResponseEntity.ok("Query: " + query + "\n" +
                     "Результат SQL запроса с помощью Callable Procedure:\n" + printResult(resultSet));
@@ -126,39 +138,7 @@ public class UserInfoController {
 
 
 /*
-    public static void callableProcedure(UserLogin user) {
-        if (exist(user)) {
-            try {
-                connection = DriverManager.getConnection(url, sql_user, sql_password);
-                callableStatement = connection.prepareCall("{call proc2(?,?)}");
-                callableStatement.setString(1, user.userName);
-                callableStatement.setString(2, DigestUtils.md5Hex(user.password));
-                resultSet = callableStatement.executeQuery();
-                System.out.println("\nРезультат SQL запроса с помощью Callable Procedure:\n");
-
-                while (resultSet.next()) {
-                    printResult(resultSet);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (connection != null) connection.close();
-                } catch (SQLException ignored) {
-                }
-                try {
-                    if (callableStatement != null) callableStatement.close();
-                } catch (SQLException ignored) {
-                }
-                try {
-                    if (resultSet != null) resultSet.close();
-                } catch (SQLException ignored) {
-                }
-            }
-        }
-    }
-
-    public static void queryAndWhitelist(UserLogin user) {
+        public static void queryAndWhitelist(UserLogin user) {
         String value; //можно сделать enum и проверять на наличие value в enum
         try {
             value = switch (user.userName) {
@@ -251,18 +231,6 @@ public class UserInfoController {
             }
         }
     }
-
-    private static boolean exist(UserLogin user) {
-        if ((user.userName != null) && (user.password != null)) return true;
-        return false;
-    }
-
-    public static void printResult(ResultSet resultSet) throws SQLException {    // Printer
-        System.out.printf("User ID: [%d]\t|\tUser name: [%s]\t|\teMail: [%s]\t|\t$cash: [%d]\n",
-                resultSet.getInt("id"),
-                resultSet.getString("userName"),
-                resultSet.getString("email"),
-                resultSet.getInt("cash"));
-    }*/
+*/
 
 }

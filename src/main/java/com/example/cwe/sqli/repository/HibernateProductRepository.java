@@ -18,6 +18,7 @@ public class HibernateProductRepository {
         к которой привязан (mapped) класс Product. При обращении в подзапросе к таблице, которая не связана с сущностью,
         генерируется исключение HibernateQueryException и запрос дальше не обрабатывается.*/
 
+    //TODO: JavaDoc! same as JPQLProductController.java
     @Autowired
     private EntityManager em;
 
@@ -34,7 +35,15 @@ public class HibernateProductRepository {
         //.getSingleResult() - усложнит, но не устранит инъекцию
     }
 
+
+    public List<Product> findProductByClassName_HQL_unsafe(String name) {
+        return (List<Product>) em.createQuery(HQL_UNSAFE + name + "'", Product.class).getResultList();
+        //.getSingleResult() - усложнит, но не устранит инъекцию
+    }
+
+
     private static final String HQL_SAFETY = "FROM Product t WHERE t.name=?1";
+
 
     public List<Product> findByName_HQL_safety(String name) {
         return (List<Product>) em.createQuery(HQL_SAFETY).setParameter(1, name).getResultList();

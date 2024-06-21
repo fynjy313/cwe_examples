@@ -6,7 +6,8 @@ INSERT INTO Wallets (username, email, password, cash) VALUES
 ('petya', 'petya@cwe.exp', 'a173e8ab419cb6d9b3f3400b9552766f', 10000);
 
 --products table
-INSERT INTO Products (name, quantity, price) VALUES
-('juice', 14, 10.50),
-('potato', 23, 2.30),
-('beer', 7, 5.99);
+INSERT INTO Products (name, exp, quantity, price) VALUES
+('juice', '2024-12-31', 14, 10.50),
+('potato', '2024-11-01', 23, 2.30),
+('onion', '2024-10-11', 17, 0.40),
+('beer', '2025-06-20', 7, 5.99);
