@@ -233,4 +233,22 @@ public class UserInfoController {
     }
 */
 
+    @PostMapping(value = "statement", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> doSql(@RequestBody String login) {
+
+        String query = "SELECT id, userName, email, cash FROM Wallets WHERE username = '" + login;
+
+        try (Connection connection = DriverManager.getConnection(url, sql_user, sql_password);
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
+
+            return ResponseEntity.ok("Query: " + query + "\n" +
+                    "Результат SQL запроса с помощью Statement:\n" + printResult(resultSet));
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("SQLException: " + e.getMessage()); //bad idea, only for exp
+        }
+    }
+
 }

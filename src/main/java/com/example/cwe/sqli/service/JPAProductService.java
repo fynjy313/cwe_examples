@@ -21,15 +21,6 @@ public class JPAProductService {
     @Autowired
     private JpaProductRepository repository;
 
-    //Native Query
-    public Product saveProduct(Product product) {
-        return repository.save(product);
-    }
-
-    public List<Product> saveProducts(List<Product> products) {
-        return repository.saveAll(products);
-    }
-
     public List<Product> getProducts() {
         return repository.findAll();
     }
@@ -69,7 +60,6 @@ public class JPAProductService {
 
     //Positional Parameters
     public List<Product> findByName_JPQL_pos_param(String name) {
-
         return repository.findByName_JPQL_pos_param(name);
     }
 
@@ -87,5 +77,12 @@ public class JPAProductService {
 //                .map(this::toAccountDTO)
 //                .collect(Collectors.toList());}
 
+    //other crud
+    public Product saveProduct(Product product) {
+        return repository.save(product);
+    }
 
+    public List<Product> saveProducts(List<Product> products) {
+        return repository.saveAll(products);
+    }
 }

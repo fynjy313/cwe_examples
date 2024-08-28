@@ -1,5 +1,7 @@
 package com.example.cwe;
 
+import org.apache.commons.lang3.StringEscapeUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;

@@ -25,29 +25,62 @@ public class HibernateProductController {
     @Autowired
     private HibernateProductRepository repository;
 
+    //TODO: JavaDoc! same as JPQLProductController.java
 
-    //%27%20or%20%271%27=%271
+    /**
+     * SQL injection unsafe.
+     *
+     * @param name Название товара
+     * @code HQL_UNSAFE = "FROM Product t WHERE t.name='" + name + "'"
+     * @injection %27%20or%20%271%27=%271
+     */
     @GetMapping("/products-byName-unsafe/{name}")
     public List<Product> findByName_HQL_unsafe(@PathVariable String name) {
         return repository.findByName_HQL_unsafe(name);
     }
 
+    /**
+     * SQL injection unsafe.
+     *
+     * @param name Название товара
+     * @code HQL_UNSAFE = "FROM Product t WHERE t.name='" + name + "'"
+     * @injection %27%20or%20%271%27=%271
+     */
     @GetMapping("/products-byName-class-unsafe/{name}")
     public List<Product> findProductByClassName_HQL_unsafe(@PathVariable String name) {
         return repository.findProductByClassName_HQL_unsafe(name);
     }
 
-    @GetMapping("/products-byName-safety/{name}")
-    public List<Product> findByName_HQL_safety(@PathVariable String name) {
-        return repository.findByName_HQL_safety(name);
-    }
-
-
+    /**
+     * SQL injection unsafe.
+     *
+     * @param name Название товара
+     * @code HQL_UNSAFE = "FROM Product t WHERE t.name='" + name + "'"
+     * @injection %27%20or%20%271%27=%271
+     */
     @GetMapping("/products-byName-session-unsafe/{name}")
     public List<Product> findByName_HQL_Session_unsafe(@PathVariable String name) {
         return repository.findByName_HQL_Session_unsafe(name);
     }
 
+    /**
+     * SQL injection safe. Positional parameters.
+     *
+     * @param name Название товара
+     * @code HQL_SAFETY = "FROM Product t WHERE t.name=?1"
+     */
+///"FROM Product t WHERE t.name=?1"
+    @GetMapping("/products-byName-safety/{name}")
+    public List<Product> findByName_HQL_safety(@PathVariable String name) {
+        return repository.findByName_HQL_safety(name);
+    }
+
+    /**
+     * SQL injection safe. Named parameters/
+     *
+     * @param name Название товара
+     * @code HQL_SAFETY_2 = "FROM Product t WHERE t.name = :paramName"
+     */
     @GetMapping("/products-byName-session-safety/{name}")
     public List<Product> findByName_HQL_Session_safety(@PathVariable String name) {
         return repository.findByName_HQL_Session_safety(name);

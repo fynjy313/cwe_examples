@@ -9,11 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.example</groupId>
-    <!--    <artifactId>command_injection_exp</artifactId>-->
     <artifactId>cwe_examples</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>war</packaging>
-    <!--    <name>command_injection_exp</name>-->
+    <packaging>jar</packaging>
     <name>cwe_examples</name>
     <description>Demo app with most popular CWE</description>
     <properties>
@@ -23,7 +21,9 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <!--            <version>3.2.5</version>-->
+            <version>2.6.7</version>
+            <!--<version>3.2.5</version>-->
+            <!--<systemPath>C:/Users/69BarkhatovAN/.m2/repository/org/springframework/boot/spring-boot-starter-web/2.6.7/spring-boot-starter-web-2.6.7.jar</systemPath>-->
         </dependency>
 
         <dependency>
@@ -112,11 +112,11 @@
             <scope>runtime</scope>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>mysql</groupId>-->
-<!--            <artifactId>mysql-connector-java</artifactId>-->
-<!--            <scope>runtime</scope>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>mysql</groupId>-->
+        <!--            <artifactId>mysql-connector-java</artifactId>-->
+        <!--            <scope>runtime</scope>-->
+        <!--        </dependency>-->
 
         <dependency>
             <groupId>org.testng</groupId>
@@ -124,11 +124,11 @@
             <version>7.1.0</version>
             <!--            <scope>compile</scope>-->
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>junit</groupId>-->
-<!--            <artifactId>junit</artifactId>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>junit</groupId>-->
+        <!--            <artifactId>junit</artifactId>-->
+        <!--            <scope>test</scope>-->
+        <!--        </dependency>-->
 
     </dependencies>
 

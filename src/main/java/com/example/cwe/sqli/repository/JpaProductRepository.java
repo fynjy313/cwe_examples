@@ -24,13 +24,13 @@ public interface JpaProductRepository extends JpaRepository<Product, Integer> {
     List<Product> findByName_JPQL_native(String name);
 
 
-        /*Positional Parameters: the parameters is referenced by their positions in the query
-        (defined using ? followed by a number (?1, ?2, …).
-        Spring Data JPA will automatically replace the value of each parameter in the same position.*/
+    /*Positional Parameters: the parameters is referenced by their positions in the query
+    (defined using ? followed by a number (?1, ?2, …).
+    Spring Data JPA will automatically replace the value of each parameter in the same position.*/
     @Query("SELECT t FROM Product t WHERE t.name LIKE %?1%")
     List<Product> findByName_JPQL_pos_param(String name);
 
-    //    Named Parameters. A named parameter starts with : followed by the name of the parameter
+    //Named Parameters. A named parameter starts with : followed by the name of the parameter
     @Query("SELECT t FROM Product t WHERE t.name LIKE %:id%")
     List<Product> findByName_JPQL_name_param(@Param("id") String name);
 
