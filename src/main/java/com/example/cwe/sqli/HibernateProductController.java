@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.persistence.criteria.CriteriaBuilder;
 import java.util.List;
 
 /**
@@ -76,7 +77,7 @@ public class HibernateProductController {
     }
 
     /**
-     * SQL injection safe. Named parameters/
+     * SQL injection safe. Named parameters.
      *
      * @param name Название товара
      * @code HQL_SAFETY_2 = "FROM Product t WHERE t.name = :paramName"
@@ -84,6 +85,19 @@ public class HibernateProductController {
     @GetMapping("/products-byName-session-safety/{name}")
     public List<Product> findByName_HQL_Session_safety(@PathVariable String name) {
         return repository.findByName_HQL_Session_safety(name);
+    }
+
+    /**
+     * SQL injection safe. JPA Criteria API.
+     *
+     * @param name Название товара
+     * @code Root<Product> root = cq.from(Product.class);
+     * cq.select(root).where(cb.equal(root.get(Product_.name), name));
+     */
+    @GetMapping("/products-byName-criteria-api-safety/{name}")
+    public List<Product> findByName_HQL_criteriaApi_safety(@PathVariable String name) {
+        return repository.findByName_HQL_criteriaApi_safety(name);
+
     }
 
 }

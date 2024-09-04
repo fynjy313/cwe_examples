@@ -5,6 +5,8 @@ import com.example.cwe.sqli.service.JPAProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 import java.util.List;
 
 @RestController
@@ -28,6 +30,10 @@ public class JPQLProductController {
     public List<Product> findProductByName(@PathVariable String name) {
         return serviceJPA.getProductsByName(name);
     }
+
+    // JPA example test
+    @Autowired
+    private EntityManager em;
 
 
     /**

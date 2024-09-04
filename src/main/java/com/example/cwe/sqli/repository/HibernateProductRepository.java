@@ -2,12 +2,16 @@ package com.example.cwe.sqli.repository;
 
 
 import com.example.cwe.sqli.entity.Product;
+import com.example.cwe.sqli.entity.Product_;
 import com.example.cwe.sqli.utils.HibernateSessionFactory;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.util.List;
 
 @Repository
@@ -64,5 +68,14 @@ public class HibernateProductRepository {
 
     public List<Product> findByName_HQL_Session_safety(String name) {
         return session.createQuery(HQL_SAFETY_2).setParameter("paramName", name).list();
+    }
+
+    //JPA Criteria API
+    public List<Product> findByName_HQL_criteriaApi_safety(String name) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Product> cq = cb.createQuery(Product.class);
+        Root<Product> root = cq.from(Product.class);
+        cq.select(root).where(cb.equal(root.get(Product_.name), name));
+        return em.createQuery(cq).getResultList();
     }
 }
