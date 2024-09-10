@@ -10,7 +10,6 @@ import javax.xml.bind.Unmarshaller;
 import java.io.File;
 
 public class XxeInjectionControllerTest {
-    //TODO: XInclude attacks
     public static final String xxe = "src/main/resources/xml/xxe_exp.xml";
     public static final String xxe1 = "src/main/resources/xml/xxe_exp1.xml";
 

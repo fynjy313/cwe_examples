@@ -75,7 +75,7 @@ public class JPQLProductController {
         return serviceJPA.findByName_JPQL_name_param(name);
     }
 
-    //TODO?:
+
     /*https://www.baeldung.com/sql-injection
     public List<AccountDTO> unsafeJpaFindAccountsByCustomerId(String customerId) {
     String jql = "from Account where customerId = '" + customerId + "'";
@@ -86,7 +86,7 @@ public class JPQLProductController {
       .collect(Collectors.toList());
 }*/
 
-    //TODO?:
+
     /*
 https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
 Hibernate Query Language (HQL) Prepared Statement (Named Parameters) Examples:

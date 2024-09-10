@@ -26,8 +26,6 @@ public class HibernateProductController {
     @Autowired
     private HibernateProductRepository repository;
 
-    //TODO: JavaDoc! same as JPQLProductController.java
-
     /**
      * SQL injection unsafe.
      *

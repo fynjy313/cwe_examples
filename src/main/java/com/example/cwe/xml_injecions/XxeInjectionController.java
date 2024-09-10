@@ -179,6 +179,7 @@ public class XxeInjectionController {
 
 
     /**
+     * Exploiting XInclude to retrieve files
      * Только для проверки XInclude
      * <?xml version="1.0" encoding="UTF-8"?>
      * <foo xmlns:xi="http://www.w3.org/2001/XInclude">

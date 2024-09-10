@@ -3,6 +3,7 @@ package com.example.cwe.sqli;
 import com.example.cwe.sqli.entity.AuthLoginForm;
 import org.apache.commons.codec.Encoder;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +20,14 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping("sqli/user-info")
 public class UserInfoController {
-    private static final String url = "jdbc:h2:file:./data/demo;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE;";
-    private static final String sql_user = "sa";
-    private static final String sql_password = "";
 
-    //TODO: all params from property file
+    @Value("${spring.datasource.url}")
+    private String url;
+    @Value("${spring.datasource.username}")
+    private String sql_user;
+    @Value("${spring.datasource.password}")
+    private String sql_password;
+
     @GetMapping("/")
     ModelAndView loginTest() {
         return new ModelAndView("login.jsp");
