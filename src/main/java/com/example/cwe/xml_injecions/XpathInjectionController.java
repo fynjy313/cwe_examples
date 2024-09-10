@@ -35,6 +35,8 @@ public class XpathInjectionController {
     public static final String xsdPath = "src/main/resources/xml/users.xsd";
     public static final String xmlPath = "src/main/resources/xml/users.xml";
 
+    //TODO: javadoc + example payload for all endpoints
+
     @GetMapping("resolve-user-group-unsafe")
     public void resolveUserGroupUnsafe(@RequestParam String username, @RequestParam String password
             , HttpServletResponse response)
@@ -85,7 +87,7 @@ public class XpathInjectionController {
         } else throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user. Go away!");
     }
 
-    public class SimpleVariableResolver implements XPathVariableResolver {
+    public static class SimpleVariableResolver implements XPathVariableResolver {
         private static final Map<QName, Object> vars = new HashMap<>();
 
         public void addVariable(QName name, Object value) {

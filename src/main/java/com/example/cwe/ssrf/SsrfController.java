@@ -58,6 +58,7 @@ public class SsrfController {
     @GetMapping("open-page-safe")
     public String openPageSafe(@RequestParam String location) throws IOException {
         // Test request: /ssrf/open-page-safe?location=;@httpforever.com
+        //TODO: Qodana tells that there is a Open redirect vuln here - CHECK! if true - do example
         URL resultUrl = UriComponentsBuilder.newInstance()
                 .scheme("http").host("httpbin.org").path("anything/").path(location).build().toUri().toURL();
         System.out.printf("url: %s\nhost: %s\n", resultUrl, resultUrl.getHost());

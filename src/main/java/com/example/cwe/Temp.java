@@ -1,7 +1,5 @@
 package com.example.cwe;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +36,7 @@ public class Temp {
             Process process = Runtime.getRuntime().exec(comm);
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-            String s = null;
+            String s;
             while ((s = stdInput.readLine()) != null) {
                 System.out.println(s);
             }
@@ -48,6 +46,5 @@ public class Temp {
 
         }
     }
-    java.lang.ProcessBuilder pb = new ProcessBuilder();
 
 }
