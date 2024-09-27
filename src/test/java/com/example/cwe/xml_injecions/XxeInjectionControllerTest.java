@@ -8,6 +8,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import java.io.File;
+import java.nio.file.Path;
 
 public class XxeInjectionControllerTest {
     public static final String xxe = "src/main/resources/xml/xxe_exp.xml";
@@ -40,6 +41,19 @@ public class XxeInjectionControllerTest {
         Unmarshaller unmarshaller = context.createUnmarshaller();
         //unmarshaller.setProperty(javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD, "all");
         System.out.println((User) unmarshaller.unmarshal(new File(xxe1)));
+    }
+
+    @Test
+    void qweqwe() {
+
+        String baseDir = "C://temp//tmp";
+        System.out.println(Path.of(baseDir).resolve("/temp"));
+        System.out.println(Path.of(baseDir).resolve("/java_projects"));
+        System.out.println(Path.of(baseDir).resolve("tmp/../temp"));
+
+        String fileGUID = "/../123";
+        //result path will be "C:\temp\tmp\..\123.txt"
+        System.out.println(new File("C://temp" + "/tmp" + fileGUID + ".txt"));
     }
 
 

@@ -1,5 +1,7 @@
 package com.example.cwe.path_traversal;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
@@ -17,8 +19,9 @@ import java.util.Date;
 @RequestMapping("path-traversal")
 @SuppressWarnings("unused")
 public class PathTraversalController {
+    //TODO: temp folder for other OS - exp %tempdir%
     static final String BASE_DIRECTORY = "c:\\temp\\";
-
+    private static final Logger logger = LogManager.getLogger(PathTraversalController.class);
 
     @GetMapping("download-image-unsafe")
     public void downloadImageUnsafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
@@ -42,6 +45,7 @@ public class PathTraversalController {
                     .write(("Resolved file name: " + f + "\n" + "Canonical pathname: "
                             + f.getCanonicalPath() + "\n\n").getBytes());
             response.getOutputStream().write(Files.readAllBytes(f.toPath()));
+            logger.info("File " + fileName + " downloaded.");
         } else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.getWriter().write("File doesn't exist or is not a file.");

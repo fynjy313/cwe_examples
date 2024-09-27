@@ -15,6 +15,9 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "ssrf")
 public class SsrfController {
 
+    //TODO: подробнее про вектора атак через SSRF
+    //TODO: CORS, CSRF, SOP, ...
+
     @GetMapping("open-stream-unsafe")
     // test on http://httpforever.com or http://example.com to prevent SSL exceptions
     public String openStreamToRemoteObjectUnsafe(@RequestParam String location) throws Exception {

@@ -31,7 +31,7 @@ public class HibernateProductController {
      *
      * @param name Название товара
      * @code HQL_UNSAFE = "FROM Product t WHERE t.name='" + name + "'"
-     * @injection %27%20or%20%271%27=%271
+     * @injection name = %27%20or%20%271%27=%271
      */
     @GetMapping("/products-byName-unsafe/{name}")
     public List<Product> findByName_HQL_unsafe(@PathVariable String name) {

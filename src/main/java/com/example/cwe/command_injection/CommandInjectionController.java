@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 @RestController
 @RequestMapping("cmd")
 public class CommandInjectionController {
-
+    //TODO: problems with encoding in chrome
     @GetMapping("ping")
     public String executePingCommand(@RequestParam String ip) throws IOException {
         // http://localhost:7171/ping?ip=127.0.0.2 %26 dir %26 whoami /groups
@@ -143,9 +143,9 @@ public class CommandInjectionController {
         if (Pattern.matches("^.*(([&|;$><`\\\\!'\"()])|(0x0[Aa])).*$", inputCmd)) {
             System.out.println("Недопустимая команда");
         }
-        String strip = inputCmd.replaceAll("[&|;$><`\\\\!'\"()]+","");
-        String strip2 = inputCmd.replaceAll("[^a-zA-Z 0-9]","");
-        String escape = inputCmd.replaceAll("[^a-zA-Z 0-9]","_");
+        String strip = inputCmd.replaceAll("[&|;$><`\\\\!'\"()]+", "");
+        String strip2 = inputCmd.replaceAll("[^a-zA-Z 0-9]", "");
+        String escape = inputCmd.replaceAll("[^a-zA-Z 0-9]", "_");
 
         final String[] command = inputCmd.split(" ");
 
