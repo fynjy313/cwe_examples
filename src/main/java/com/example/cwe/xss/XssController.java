@@ -1,42 +1,14 @@
 package com.example.cwe.xss;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
-@RestController
+@Controller
 @RequestMapping("/xss")
 public class XssController {
 
     //TODO: beautify - JS ?
 
-    private List<String> words = new ArrayList<>(List.of("Recorded words: "));
-
-//    @GetMapping("/")
-//    public String storedXssExample1() {
-//        return words.toString();
-//    }
-
-    @GetMapping("/exp")
-    public String simpleXxsExample() {
-        return "<script>alert('XSS')</script>";
-    }
-
-    /**
-     * Reflected XSS.
-     * Try name=<script>alert(%27reflected%20XSS%27)</script>
-     *
-     * @param name Name to greeting
-     * @return 'Hello' + name
-     */
-    @GetMapping("/reflected1")
-    public String reflectedXssExample1(@RequestParam String name) {
-        words.add(name);
-        return "Hello, " + name + "!";
-    }
 
     @GetMapping("/html")
     public String jspExp() {
@@ -47,4 +19,11 @@ public class XssController {
     public String login() {
         return "login";
     }
+
+    @GetMapping("/feedback")
+    public String feedBack() {
+        return "feedback";
+    }
+
+
 }

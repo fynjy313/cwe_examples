@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Feedback page</title>
+</head>
+<body>
+<h1>Feedback page</h1>
+<hr>
+
+
+<h2>Отзывы наших любимых пользователей</h2>
+
+<input id="sendFeedBack" name="feedBackForm" type="text" th:name="feedBackForm"
+       placeholder="Напиши пару ласковых :-)" style="width:60%"/>
+<button id="sendFeedBack-button" class="btn btn-danger" onclick="sendFeedBack()">Send!</button>
+
+<script>
+    async function sendFeedBack(){
+    let formData = new FormData();
+    formData.append("feedBack", sendFeedBack.value);
+    let response = await fetch('/xss/saveFeedBack', {
+    method: "POST",
+    body: formData
+  });
+  if (response.status == 200) {alert("Image scan started successfully: " + startScanId.value);}
+}
+</script>
+
+<hr>
+<div style="color:grey" class="footer_copyright">
+    © 2024 Anton Barkhatov. All rights reserved.
+</div>
+</body>
+</html>
