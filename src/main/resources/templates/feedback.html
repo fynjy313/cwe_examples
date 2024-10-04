@@ -8,14 +8,13 @@
 <h1>Feedback page - Stored XXS example</h1>
 <hr>
 
-
 <h2>Отзывы наших любимых пользователей</h2>
 
 <input id="sendFeedBack" name="feedBackForm" type="text" th:name="feedBackForm1"
        placeholder="Напиши пару ласковых :-)" style="width:60%"/>
 <button id="sendFeedBack-button" class="btn btn-danger" onclick="sendFeedBack()">Send!</button>
 <br>
-<sub><i>p.s. можешь попробовать ввести XSS</i></sub>
+<sub><i>p.s. можешь попробовать ввести &lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;</i></sub>
 
 <script>
     async function sendFeedBack(){
@@ -34,7 +33,8 @@
   }
 }
 </script>
-<h2>Отзывы:</h2>
+
+<br><br>
 <button id="refresh" onclick="location.reload()">Refresh</button>
 <br><br>
 

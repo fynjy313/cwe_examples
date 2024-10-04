@@ -1,10 +1,14 @@
 package com.example.cwe.xss;
 
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+//@RestController]
+@Controller
 @RequestMapping("/xss")
 public class ReflectedXssController {
+
+    //TODO: greet.html
 
     @GetMapping("/exp")
     public String simpleXxsExample() {
@@ -21,5 +25,10 @@ public class ReflectedXssController {
     @GetMapping("/reflected")
     public String reflectedXssExample1(@RequestParam String name) {
         return "Hello, " + name + "!";
+    }
+
+     @GetMapping("/reflected2")
+    public String reflectedXssExample2() {
+        return "greet";
     }
 }

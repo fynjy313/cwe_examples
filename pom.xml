@@ -68,12 +68,21 @@
             <systemPath>${project.basedir}/SaxonHE12-4J/saxon-he-xqj-12.4.jar</systemPath>
         </dependency>
 
-
+        <!-- https://stackoverflow.com/questions/53998702/could-not-find-javax-xml-xqueryxqj-api1-0 -->
+<!--        <dependency>-->
+<!--            <groupId>javax.xml.xquery</groupId>-->
+<!--            <artifactId>xqj-api</artifactId>-->
+<!--            <version>1.0</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>javax.xml.xquery</groupId>
             <artifactId>xqj-api</artifactId>
             <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/xqj-api-1.0.jar</systemPath>
+
         </dependency>
+
         <!-- JAXB API -->
         <dependency>
             <groupId>javax.xml.bind</groupId>

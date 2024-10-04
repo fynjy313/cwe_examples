@@ -16,8 +16,6 @@ import java.util.List;
 @RequestMapping("/xss")
 public class StoredXssController {
 
-    //TODO: beautify - JS ?
-
     private final List<FeedBackObj> feedBackObjs = new ArrayList<>();
 
 
@@ -40,16 +38,6 @@ public class StoredXssController {
         return ResponseEntity.ok("FeedBack successfully added");
     }
 
-
-//    @GetMapping("/html")
-//    public String jspExp() {
-//        return "xss_page";
-//    }
-//
-//    @GetMapping("/login")
-//    public String login() {
-//        return "login";
-//    }
 
     @Data
     @AllArgsConstructor
