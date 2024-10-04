@@ -2,30 +2,67 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Feedback page</title>
+    <title>Feedback page - Stored XXS example</title>
 </head>
 <body>
-<h1>Feedback page</h1>
+<h1>Feedback page - Stored XXS example</h1>
 <hr>
 
 
 <h2>Отзывы наших любимых пользователей</h2>
 
-<input id="sendFeedBack" name="feedBackForm" type="text" th:name="feedBackForm"
+<input id="sendFeedBack" name="feedBackForm" type="text" th:name="feedBackForm1"
        placeholder="Напиши пару ласковых :-)" style="width:60%"/>
 <button id="sendFeedBack-button" class="btn btn-danger" onclick="sendFeedBack()">Send!</button>
+<br>
+<sub><i>p.s. можешь попробовать ввести XSS</i></sub>
 
 <script>
     async function sendFeedBack(){
+<!--    let data = feedBackForm.value;-->
+    let data = document.getElementById("sendFeedBack").value;
     let formData = new FormData();
-    formData.append("feedBack", sendFeedBack.value);
-    let response = await fetch('/xss/saveFeedBack', {
+    formData.append("feedBack", data);
+
+    let response = await fetch('/xss/save-feedback', {
     method: "POST",
     body: formData
-  });
-  if (response.status == 200) {alert("Image scan started successfully: " + startScanId.value);}
+    });
+  if (response.status == 200) {
+    alert("FeedBack sent successfully: " + data);
+    location.reload();
+  }
 }
 </script>
+<h2>Отзывы:</h2>
+<button id="refresh" onclick="location.reload()">Refresh</button>
+<br><br>
+
+<style>
+    table, th, td {
+   border: 1px solid black;
+   border-collapse: collapse;
+   }
+</style>
+
+<table id="infoTable" style="width:100%" class="table table-striped table-responsive-md">
+    <thead>
+    <tr>
+        <th>date</th>
+        <th>Feedback ('th:utext')</th>
+        <th>Feedback (escaped - 'th:text')</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="obj:${feedBacks}">
+        <td th:text="${obj.date}"></td>
+        <!-- BAD! Not use th:utext attribute that stands for unescaped text.
+        Use this with caution and avoid user input in th:utext as it can cause security problems.-->
+        <td th:utext="${obj.text}"></td>
+        <td th:text="${obj.text}"></td>
+    </tr>
+    </tbody>
+</table>
 
 <hr>
 <div style="color:grey" class="footer_copyright">

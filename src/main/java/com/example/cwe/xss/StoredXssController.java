@@ -1,0 +1,62 @@
+package com.example.cwe.xss;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+@Controller
+@RequestMapping("/xss")
+public class StoredXssController {
+
+    //TODO: beautify - JS ?
+
+    private final List<FeedBackObj> feedBackObjs = new ArrayList<>();
+
+
+    @GetMapping("/feedback")
+    public String feedBack(Model model) {
+        model.addAttribute("feedBacks", feedBackObjs);
+        return "feedback";
+    }
+
+    /**
+     * Stored XSS.
+     * Try post feedBack like '<script>alert('XSS')</script>'
+     * This string will be recorded and displayed at page xss/feedback
+     *
+     * @param feedBack Some feedback
+     */
+    @PostMapping("/save-feedback")
+    public ResponseEntity<?> storedXssExample1(@RequestParam String feedBack) {
+        feedBackObjs.add(new FeedBackObj(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), feedBack));
+        return ResponseEntity.ok("FeedBack successfully added");
+    }
+
+
+//    @GetMapping("/html")
+//    public String jspExp() {
+//        return "xss_page";
+//    }
+//
+//    @GetMapping("/login")
+//    public String login() {
+//        return "login";
+//    }
+
+    @Data
+    @AllArgsConstructor
+    static class FeedBackObj {
+        private String date;
+        private String text;
+    }
+
+
+}

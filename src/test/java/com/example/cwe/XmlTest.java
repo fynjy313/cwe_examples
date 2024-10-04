@@ -4,6 +4,8 @@ import com.saxonica.xqj.SaxonXQDataSource;
 import org.testng.annotations.Test;
 
 import javax.xml.xquery.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class XmlTest {
 
@@ -32,6 +34,13 @@ public class XmlTest {
         conn.close();
         expression.close();
         resultSequence.close();
+    }
+
+    @Test
+    public void dateTest() {
+        Date date = new Date();
+        String res = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+        System.out.println(res);
     }
 
 }
