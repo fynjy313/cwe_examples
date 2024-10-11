@@ -15,6 +15,9 @@ import java.util.List;
 @Controller
 @RequestMapping("/xss")
 public class StoredXssController {
+    //TODO: feedback page on JSP
+    //TODO: login + session + cookie
+    //TODO: xqj-api-1.0.jar - remove or move to dir - find usages?
 
     private final List<FeedBackObj> feedBackObjs = new ArrayList<>();
 

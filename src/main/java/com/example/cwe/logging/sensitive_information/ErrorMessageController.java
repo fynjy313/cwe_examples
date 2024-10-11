@@ -1,11 +1,9 @@
-package com.example.cwe.sensitive_information;
+package com.example.cwe.logging.sensitive_information;
 
-import com.example.cwe.path_traversal.PathTraversalController;
 import com.example.cwe.sqli.entity.Product;
 import com.example.cwe.sqli.repository.HibernateProductRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hibernate.hql.internal.ast.QuerySyntaxException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
