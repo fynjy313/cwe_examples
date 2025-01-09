@@ -1,7 +1,7 @@
 # Примеры эксплуатации и устранения CWE в Java
 
 ## Запуск:
-```cmd
+```shell
 ```
 
 Данное руководство поможет вам понять причины появления слабостей, их возможное влияние на приложение, а также способы их предотвращения в web – приложениях, разрабатываемых на языке Java с использованием Spring.
@@ -252,6 +252,7 @@ public void saxParseSafe(@RequestBody String xml, HttpServletResponse response) 
 }
 ```
 
+
 ## 2.	CWE-73: External Control of File Name or Path
 ### 2.1. Описание
 
@@ -476,4 +477,424 @@ https://community.veracode.com/s/article/how-do-i-fix-cwe-73-external-control-of
 * https://owasp.org/www-community/attacks/Path_Traversal
 * https://portswigger.net/web-security/file-path-traversal
 * https://learn.snyk.io/lesson/directory-traversal/
+
+## 3. CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+
+![cwe-89_1.png](readme_img/cwe-89_1.png)
+
+### 3.1. Описание
+Внедрение SQL-кода (англ. SQL injection) — один из распространённых способов взлома сайтов и программ, работающих с базами данных, основанный на внедрении в запрос произвольного SQL-кода.
+
+Внедрение SQL, в зависимости от типа используемой СУБД и условий внедрения, может дать атакующему возможность выполнить произвольный запрос к базе данных (например, прочитать содержимое любых таблиц, удалить, изменить или добавить данные), получить возможность чтения и/или записи локальных файлов и выполнения произвольных команд на атакуемом сервере.
+
+Атаки типа «внедрение SQL» становятся возможными, когда:
+* вводимые пользователем данные не проверяются, не фильтруются или не очищаются;
+* динамические запросы или не параметризованные вызовы без контекстного экранирования напрямую используются в интерпретаторе;
+
+Предположим, что на стороне клиента формируется URL – запрос, в котором передаются параметры: логин и пароль пользователя. На стороне сервера происходит извлечение этих параметров и их подстановка в SQL – запрос, выполняемый в БД.
+
+URL – запрос имеет следующий вид:
+`http://money.cbr.ru/logon?login=user&passwd=12345`
+
+Примеры возможных SQL инъекций:
+1)	Сворачивание условия WHERE к истинностному результату при любых значениях параметров.
+
+**Запрос**: `http://money.cbr.ru/logon?login=user' or '1'='1&passwd=null' or '1'='1`
+
+SQL – код: `SELECT * FROM users WHERE userName ='user’ OR '1' = '1' AND password='null' OR '1' = '1'`
+
+**Результат:**
+
+![cwe-89_2.png](readme_img/cwe-89_2.png)
+
+2)	Присоединение к запросу результатов другого запроса. Делается это через оператор UNION.
+
+`http://money.cbr.ru/logon?login=null&passwd=null ' UNION SELECT * FROM users WHERE '1'='1`
+
+`SELECT * FROM users WHERE userName ='null' AND PASSWORD='null' UNION SELECT * FROM users`
+
+Результат – успешный доступ к информации (аналогично рисунку 1).
+
+3)	Закомментирование части запроса.
+
+`http://money.cbr.ru/logon?login=user' -- &passwd=null`
+
+`SELECT * FROM users WHERE userName = 'user' -- ' AND password = 'null'`
+
+Результат – получен доступ к записи без указания пароля:
+
+![cwe-89_3.png](readme_img/cwe-89_3.png)
+
+### 3.2. Защитные меры
+Для предотвращения SQL injection необходимо отказаться от написания динамических запросов или не допускать, чтобы вводимые пользователем данные (потенциально содержащие вредоносный SQL) влияли на логику выполняемого запроса. Если избежать использования динамически формируемых запросов не представляется возможным, необходимо применять защитные меры, описанные ниже.
+#### 3.2.1. Использование Prepared Statements
+
+Класс `java.sql.Statement` используется для выполнения SQL-запросов. Существует три типа класса Statement, которые являются как бы контейнерами для выполнения SQL-выражений через установленное соединение:
+1. Statement, базовый;
+2. PreparedStatement, унаследованный от Statement – параметризованные запросы;
+3. CallableStatement, унаследованный от PreparedStatement – хранимые процедуры.
+
+Все классы специализируются для выполнения различных типов запросов:
+
+1. Statement предназначен для выполнения простых SQL-запросов без параметров; содержит базовые методы для выполнения запросов и извлечения результатов.
+2. PreparedStatement используется для выполнения SQL-запросов с или без входных параметров; добавляет методы управления входными параметрами.
+3. CallableStatement используется для вызовов хранимых процедур; добавляет методы для манипуляции выходными параметрами.
+
+#### *Пример небезопасного использования класса Statement*
+В данном примере запрос (query) формируется с помощью конкатенации строк: к SQL – команде добавляются введенные пользователем логин и пароль.
+
+```java
+String query = "SELECT id, userName, email, cash FROM Wallets WHERE username = '"
+        + loginForm.username() + "' AND password = '"
+        + DigestUtils.md5Hex(loginForm.password()) + "'";
+
+try (Connection connection = DriverManager.getConnection(url, sql_user, sql_password);
+     Statement statement = connection.createStatement();
+     ResultSet resultSet = statement.executeQuery(query)) {
+
+    return ResponseEntity.ok("Query: " + query + "\n" +
+            "Результат SQL запроса с помощью Statement:\n" + printResult(resultSet));
+```
+
+Подставив вместо обычного логина выражение `user' -- `, и введя любой пароль нам удается успешно получить запись из таблицы:
+
+![cwe-89_4.png](readme_img/cwe-89_4.png)
+
+Подставив вместо обычного логина выражение `null' or '1'='1' -- `, и введя любой пароль нам удается успешно получить все записи из таблицы, не обладая никакими знаниями о структуре и содержании БД:
+
+![cwe-89_5.png](readme_img/cwe-89_5.png)
+
+#### *Пример безопасного использования класса PreparedStatement*
+
+```java
+String query = "SELECT id, userName, email, cash FROM Wallets WHERE username = ? AND password = ?";
+
+try (Connection connection = DriverManager.getConnection(url, sql_user, sql_password);
+     PreparedStatement statement = connection.prepareStatement(query)) {
+
+    statement.setString(1, loginForm.username());
+    statement.setString(2, DigestUtils.md5Hex(loginForm.password()));
+
+    ResultSet resultSet = statement.executeQuery();
+    query = statement.toString().substring(query.indexOf(":") + 2);
+
+    return ResponseEntity.ok("Query: " + query + "\n" +
+            "Результат SQL запроса с помощью Prepared Statement:\n" + printResult(resultSet));
+```
+
+Подставив вместо обычного логина выражение `null' or '1'='1' -- `, и введя любой пароль, нам не удается получить данные из таблицы. Все введенные значения вставляются в запрос с помощью метода `setString`. Он сам понимает, где нужны кавычки, а где нет, и оборачивает ими все входные данные.
+
+Принцип защиты от SQL – инъекций при использовании PreparedStatement:
+
+При получении сервером SQL – запроса, он проходит следующие фазы (рисунок 4):
+1. Парсинг и нормализация - на этом этапе запрос проверяется на синтаксис и семантику. Проверяется, существуют ли ссылки на таблицу и столбцы, используемые в запросе.
+2. Компиляция - на этом этапе ключевые слова, используемые в запросе, например SELECT, FROM, WHERE и т.д., преобразуются в формат, понятный для машины. Это этап, на котором интерпретируется запрос и принимается решение о соответствующем действии.
+3. Оптимизация запроса – определяется и выбирается лучший способ выполнения запроса.
+4. Кэширование – выбранный на предыдущем этапе способ запоминается для ускорения повторного выполнения SQL – запроса.
+5. Выполнение – на этом этапе выполняется SQL – запрос, и данные возвращаются пользователю в виде объекта ResultSet.
+
+![cwe-89_6.png](readme_img/cwe-89_6.png)
+
+Рисунок 4.
+
+PreparedStatement не является готовым SQL – запросом, а содержит заполнители («плэйсхолдеры»), на место которых во время выполнения подставляются данные.
+
+При использовании PreparedStatement изменяется алгоритм выполнения SQL – запроса (рисунок 5):
+
+Фазы 1 – 4 не меняются, однако, в 4 фазе производится кэширование запроса вместе с заполнителями. Запрос на этом этапе уже скомпилирован и преобразован в машинно-понятный формат. Теперь во время выполнения, когда поступают данные, предоставленные пользователем, предварительно скомпилированный запрос извлекается из кэша, а заполнители заменяются данными, предоставленными пользователем. После того, как заполнители заменяются пользовательскими данными, окончательный запрос не компилируется / не интерпретируется снова, и механизм SQL Server обрабатывает пользовательские данные как чистые данные, а не SQL, который необходимо анализировать или компилировать снова.
+
+![cwe-89_7.png](readme_img/cwe-89_7.png)
+
+Рисунок 5.
+
+Подробнее - https://javabypatel.blogspot.com/2015/09/how-prepared-statement-in-java-prevents-sql-injection.html
+
+#### 3.2.2. Использование хранимых процедур
+Хранимые процедуры представляют собой набор команд SQL, которые могут компилироваться и храниться на сервере. Особенностью процедур является то, что есть возможность передавать аргументы и выводить различные данные в зависимости от аргумента. Процедура является сущностью SQL, которую создают один раз, а затем вызывают, передавая аргументы.
+
+Разница между PreparedStatement и CallableStatement заключается в том, что код SQL для хранимой процедуры определяется и сохраняется в самой базе данных, а затем вызывается из приложения. Оба этих метода имеют одинаковую эффективность в предотвращении внедрения SQL-кода.
+
+Пример безопасного использования класса `CallableStatement`:
+
+На сервере MySQL в БД DB1 создана хранимая процедура `proc2`:
+
+```sql
+USE DB1;
+DELIMITER //
+CREATE PROCEDURE proc2 (login VARCHAR(20), passwd VARCHAR(20))
+BEGIN
+SELECT * FROM users
+WHERE userName = login AND password_md5 = passwd;
+END //
+DELIMITER ;
+```
+
+Вызов: CALL `proc2`('user', '040b7cf4a55014e185813e0644502ea9')
+
+Вызов хранимой процедуры proc2 в java:
+
+```java
+try {
+   connection = DriverManager.getConnection(url, sql_user, sql_password);
+   callableStatement = connection.prepareCall("{call proc2(?,?)}");
+   callableStatement.setString(1, user.userName);
+   callableStatement.setString(2, DigestUtils.md5Hex(user.password));
+   resultSet = callableStatement.executeQuery();
+   System.out.println("\nРезультат SQL запроса с помощью Callable Procedure:\n");
+
+   while (resultSet.next()) {
+      printResult(resultSet);
+   }
+
+} catch (SQLException e) {
+    e.printStackTrace();
+}
+```
+
+#### 3.2.3. Проверка ввода по белому списку
+В случаях, когда параметры SQL запроса могут принимать ограниченное число вариантов необходимо проверять вводимые данные по белому списку и вставлять в запрос соответствующие вводимым данным значения, например:
+
+```java
+String value; //можно сделать enum/list и проверять на наличие value в enum
+try {
+    value = switch (user.userName) {
+        case "Administrator" -> "admin";
+        case "User" -> "user";
+        case "Sanya" -> "sanek";
+        case "User2" -> "user2";
+        default -> throw new InputValidationException("Unexpected value provided for user " +
+                "\"" + user.userName + "\"");
+    };
+} catch (InputValidationException e) {
+    e.printStackTrace();
+}
+
+String query = "SELECT id, userName, email, cash FROM users2 WHERE userName = '" + value +
+        "' AND password_md5 = '" + DigestUtils.md5Hex(user.password) + "'";
+```
+
+\* пример с аутентификационными данными показательный и в реальной жизни не применяется
+
+Теперь при попытке подстановки SQL кода в имя пользователя запрос к БД не производится и выводится сообщение о недопустимом значении параметра:
+
+![cwe-89_8.png](readme_img/cwe-89_8.png)
+
+#### 3.2.4. Экранирование всех вводимых пользователем данных
+Этот метод следует использовать только в крайнем случае, когда невозможно применить вышеперечисленные варианты. Метод заключается в том, что перед помещением пользовательского ввода в SQL запрос данные экранируются по правилам используемой СУБД.
+
+Каждая СУБД поддерживает одну или несколько схем экранирования символов, специфичных для определенных типов запросов. Если экранировать весь вводимый пользователем ввод, используя правильную схему экранирования для используемой базы данных, СУБД не будет путать этот ввод с кодом SQL, написанным разработчиком, что позволит избежать любых возможных уязвимостей, связанных с внедрением SQL-кода.
+
+Подробнее об экранировании специальных символов в SQL запросах см. в http://www.orafaq.com/wiki/SQL_FAQ#How_does_one_escape_special_characters_when_writing_SQL_queries.3F
+
+Существуют готовые библиотеки для управления безопасностью web – приложений, например, OWASP Enterprise Security API (ESAPI). Её классы содержат как готовые реализации множества алгоритмов (в т.ч. и для санитизации SQL запросов), так и абстрактные методы, которые можно реализовать самостоятельно в зависимости от специфики приложения. 
+
+#### *Пример использования ESAPI:*
+
+```java
+MySQLCodec codec = new MySQLCodec(MySQLCodec.Mode.STANDARD);
+Encoder encoder = ESAPI.encoder();
+
+String query = "SELECT id, userName, email, cash FROM users2 WHERE userName = '" +
+      encoder.encodeForSQL(codec, user.userName) + "' AND password_md5 = '" +
+      DigestUtils.md5Hex(user.password) + "'";
+```
+
+Теперь входные данные (user.userName) декодированы в безопасный для MySQL вид, и их можно использовать в запросе с помощью Statement, PreparedStatement  или CallableStatement. Например, строка `user' or '1'='1' -- ` будет преобразована в строку `user\' or \'1\'\=\'1\' \-\-`:
+
+`SELECT id, userName, email, cash FROM users2 WHERE userName = 'user\' or \'1\'\=\'1\' \-\- ' AND password_md5 = ee11cbb19052e40b07aac0ca060c23ee`
+
+### 3.3. Java Persistence API и Hibernate. HQL injection и JPQL injection
+
+![cwe-89_10.png](readme_img/cwe-89_10.png)
+
+JPA (Java Persistence API) это спецификация Java EE и Java SE, описывающая систему управления сохранением java объектов в таблицы реляционных баз данных в удобном виде. Сама Java не содержит реализации JPA, однако есть существует много реализаций данной спецификации от разных компаний (открытых и нет). Это не единственный способ сохранения java объектов в базы данных (ORM систем), но один из самых популярных в Java мире.
+
+![cwe-89_11.png](readme_img/cwe-89_11.png)
+
+Hibernate одна из самых популярных открытых реализаций последней версии спецификации (JPA 2.1). То есть JPA только описывает правила и API, а Hibernate реализует эти описания, впрочем, у Hibernate (как и у многих других реализаций JPA) есть дополнительные возможности, не описанные в JPA (и не переносимые на другие реализации JPA).
+
+Запросы, написанные на Hibernate Query Language (HQL) и Java Persistence Query Language (JPQL) так же могут содержать SQL инъекции. Для предотвращения SQL инъекций рекомендуется использовать Named parameters, Positional parameters, Criteria Query Parameters и т.д.
+
+### 3.4. Примеры
+#### *Пример 1. Небезопасное использование Hibernate Query Language (HQL)*
+
+В данном примере SQL запрос строится при помощи конкатенации строк с использованием `javax.persistence.EntityManager`:
+
+```java
+@Autowired
+private EntityManager em;
+
+private static final String HQL_UNSAFE = "FROM Product t WHERE t.name='";
+
+public List<Product> findByName_HQL_unsafe(String name) {
+    return (List<Product>) em.createQuery(HQL_UNSAFE + name + "'").getResultList();
+    //.getSingleResult() - усложнит, но не устранит инъекцию
+}
+```
+
+#### *Пример 2. Небезопасное использование HQL*
+В данном примере SQL запрос строится при помощи конкатенации строк. Используется перегруженный метод <T> TypedQuery<T> createQuery(String var1, Class<T> var2)
+
+```java
+@Autowired
+private EntityManager em;
+
+private static final String HQL_UNSAFE = "FROM Product t WHERE t.name='";
+
+public List<Product> findProductByClassName_HQL_unsafe(String name) {
+    return (List<Product>) em.createQuery(HQL_UNSAFE + name + "'", Product.class).getResultList();
+    //.getSingleResult() - усложнит, но не устранит инъекцию
+}
+```
+
+#### *Пример 3. Небезопасное использование HQL*
+В данном примере SQL запрос строится при помощи конкатенации строк с использованием org.hibernate.Session:
+
+```java
+private static final String HQL_UNSAFE = "FROM Product t WHERE t.name='";
+
+private Session session = HibernateSessionFactory.getSessionFactory().openSession();
+
+
+public List<Product> findByName_HQL_Session_unsafe(String name) {
+    return session.createQuery(HQL_UNSAFE + name + "'").list();
+}
+```
+
+#### *Пример 4. Безопасное использование HQL*
+В данном примере SQL запрос строится при помощи Positional parameters:
+
+```java
+private static final String HQL_SAFETY = "FROM Product t WHERE t.name=?1";
+
+public List<Product> findByName_HQL_safety(String name) {
+    return (List<Product>) em.createQuery(HQL_SAFETY).setParameter(1, name).getResultList();
+}
+```
+
+#### *Пример 5. Безопасное использование HQL]*
+В данном примере SQL запрос строится при помощи Named parameters:
+
+```java
+private static final String HQL_SAFETY_2 = "FROM Product t WHERE t.name = :paramName";
+
+public List<Product> findByName_HQL_Session_safety(String name) {
+    return session.createQuery(HQL_SAFETY_2).setParameter("paramName", name).list();
+}
+```
+
+#### *Пример 6. Безопасное использование Java Persistence Query Language (JPQL)*
+В данном примере строится нативный SQL запрос при помощи Positional parameters:
+
+```java
+public interface JpaProductRepository extends JpaRepository<Product, Integer> {
+
+//    Native Query with Positional Parameters
+    @Query(value = "SELECT * FROM Products t WHERE t.name LIKE ?1", nativeQuery = true)
+    List<Product> findByName_JPQL_native(String name);
+```
+#### *Пример 7. Безопасное использование Java Persistence Query Language (JPQL)*
+В данном примере SQL запрос строится при помощи Positional parameters:
+```java
+public interface JpaProductRepository extends JpaRepository<Product, Integer> {
+
+/*Positional Parameters: the parameters is referenced by their positions in the query
+(defined using ? followed by a number (?1, ?2, …).
+Spring Data JPA will automatically replace the value of each parameter in the same position.*/
+    @Query("SELECT t FROM Product t WHERE t.name LIKE %?1%")
+    List<Product> findByName_JPQL_pos_param(String name);
+```
+
+#### *Пример 8. Безопасное использование Java Persistence Query Language (JPQL)*
+В данном примере SQL запрос строится при помощи Named parameters:
+
+```java
+public interface JpaProductRepository extends JpaRepository<Product, Integer> {
+
+    // Named Parameters. A named parameter starts with : followed by the name of the parameter
+    @Query("SELECT t FROM Product t WHERE t.name LIKE %:id%")
+    List<Product> findByName_JPQL_name_param(@Param("id") String name);
+```
+
+#### *Пример 9. Безопасное использование JPA Criteria API*
+В данном примере SQL запрос строится при помощи Criteria Query Parameters
+
+```java
+public List<Product> findByName_HQL_criteriaApi_safety(String name) {
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Product> cq = cb.createQuery(Product.class);
+    Root<Product> root = cq.from(Product.class);
+    cq.select(root).where(cb.equal(root.get(Product_.name), name));
+    return em.createQuery(cq).getResultList();
+}
+```
+
+#### *Пример 10. Небезопасное использование MyBatis*
+Обратите внимание на обозначение параметра `${phone}` в приведенном ниже запросе. По умолчанию использование синтаксиса `${}` приводит к тому, что MyBatis напрямую вводит не модифицированную строку в SQL-запрос. MyBatis НЕ изменяет и не экранирует строку перед подстановкой.
+
+```xml
+<select id="getPerson" parameterType="string" resultType="com.example.cwe.sqli.entity.Person">
+    SELECT * FROM PERSON WHERE NAME = #{name} AND PHONE LIKE '${phone}';
+</select>
+```
+
+#### *Пример 11. Безопасное использование MyBatis*
+Обратите внимание на обозначение параметра `#{id}`. По умолчанию использование синтаксиса `#{}` приводит к тому, что MyBatis использует PreparedStatement для безопасной подстановки значений в SQL запрос.
+```xml
+<select id="getPerson" parameterType="int" resultType="com.example.cwe.sqli.entity.Person">
+SELECT * FROM PERSON WHERE ID = #{id}
+</select>
+```
+
+#### *Пример 12. Небезопасное использование JPQL*
+Not found.
+
+#### *Пример 13. Корректное использование – белый список*
+```java
+private static final Set<String> VALID_COLUMNS_FOR_ORDER_BY
+        = Collections.unmodifiableSet(Stream
+        .of("acc_number", "branch_id", "balance")
+        .collect(Collectors.toCollection(HashSet::new)));
+
+public List<AccountDTO> safeFindAccountsByCustomerId(String customerId, String orderBy) throws Exception {
+    String sl = "select "
+            + "customer_id,acc_number,branch_id,balance from Accounts"
+            + "where customer_id = ? ";
+    if (VALID_COLUMNS_FOR_ORDER_BY.contains(orderBy)) {
+        sql = sql + " order by " + orderBy;
+    } else {
+        throw new IllegalArgumentException("Nice try!");
+    }
+    Connection c = dataSource.getConnection();
+    PreparedStatement p = c.prepareStatement(sql);
+    p.setString(1, customerId);
+    // ... result set processing omitted
+}
+```
+
+Еще больше примеров можно посмотреть на https://bobby-tables.com/java
+
+### 3.5. В заключении
+
+![cwe-89_12.png](readme_img/cwe-89_12.png)
+
+### 3.6. Дополнительная литература
+1. CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
+https://cwe.mitre.org/data/definitions/89.html
+2. SQL injection для начинающих. Часть 1
+https://habr.com/ru/post/148151/
+3. SQL Injection Prevention Cheat Sheet
+https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
+4. Injection Prevention Cheat Sheet in Java¶
+https://cheatsheetseries.owasp.org/cheatsheets/Java_Security_Cheat_Sheet.html#injection-prevention-in-java
+5. Input Validation Cheat Sheet
+https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html
+6. Enterprise Security API (ESAPI) Java
+https://www.denimgroup.com/media/pdfs/DenimGroup_ESAPI_SATJUG_20100603.pdf
+7. Java Code Examples for org.owasp.esapi.ESAPI
+https://www.programcreek.com/java-api-examples/?api=org.owasp.esapi.ESAPI
+8. How does one escape special characters when writing SQL queries?
+http://www.orafaq.com/wiki/SQL_FAQ#How_does_one_escape_special_characters_when_writing_SQL_queries.3F
+9. JPA Query Parameters Usage
+https://www.baeldung.com/jpa-query-parameters
 
