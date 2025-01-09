@@ -41,6 +41,11 @@ public class StoredXssController {
         return ResponseEntity.ok("FeedBack successfully added");
     }
 
+    @RequestMapping("/qwe")
+    public String qwe(){
+        return "QWE!";
+    }
+
 
     @Data
     @AllArgsConstructor

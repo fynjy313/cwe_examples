@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>CKIB test app</title>
+</head>
+<body>
+<h1>Welcome to CKIB Tomsk test app</h1>
+<h2>1. Примеры и эксплуатация популярных CWE</h2>
+<h3><a th:href="@{/xss/feedback}">1.1. Stored XSS</a></h3>
+<br>
+<button type="button" th:onclick="@{/xss/qwe}"> qwe! </button>
+
+<img th:src="@{bu_cat.jpg}" width="25%" height="25%">
+</body>
+</html>

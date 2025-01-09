@@ -6,10 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.security.Principal;
+import java.io.*;
 
 /**
  * CWE-117: Improper Output Neutralization for Logs
@@ -36,7 +33,7 @@ public class LogController {
      *             1234-56-78 11:22:33.444 ERROR 66666 --- [nio-7171-exec-4] c.e.c.l.i.LogController                  : User 'admin' logged in'
      */
     @PostMapping
-    public ResponseEntity<?> logSomeInputFromUser2(@RequestBody String text) {
+    public ResponseEntity<?> logSomeInputFromUser2(@RequestBody String text) throws FileNotFoundException {
         //TODO: return Console Output to client -- WORKS!!! need beautify!
 
         // Create a stream to hold the output
