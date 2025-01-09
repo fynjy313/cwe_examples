@@ -1,5 +1,11 @@
 # Примеры эксплуатации и устранения CWE в Java
 
+## Запуск:
+```cmd
+```
+
+Данное руководство поможет вам понять причины появления слабостей, их возможное влияние на приложение, а также способы их предотвращения в web – приложениях, разрабатываемых на языке Java с использованием Spring.
+
 <!-- TOC -->
 * [Примеры эксплуатации и устранения CWE в Java](#примеры-эксплуатации-и-устранения-cwe-в-java)
   * [1.	CWE-611: Improper Restriction of XML External Entity Reference](#1-cwe-611-improper-restriction-of-xml-external-entity-reference)
@@ -18,8 +24,8 @@
 ![cwe-611_1.png](readme_img/cwe-611_1.png)
 
 ### 1.1. Описание
-Внедрение XML eXternal Entity (XXE), которое находится на 4 месте в топ-10 OWASP, представляет собой тип атаки на приложение, которое анализирует XML.
-Эта атака происходит, когда ненадежный XML, содержащий ссылку на внешний объект, обрабатывается плохо настроенным синтаксическим анализатором XML .
+Атака типа внедрение XML eXternal Entity (XXE) находится на 4 месте в топ-10 OWASP и представляет собой тип атаки на приложение, которое анализирует XML.
+Эта атака происходит, когда ненадежный XML, содержащий ссылку на внешний объект, обрабатывается плохо настроенным синтаксическим анализатором XML.
 Атака может привести к раскрытию конфиденциальных данных, отказу в обслуживании, подделке запросов на стороне сервера (SSRF), сканированию портов с точки зрения машины, на которой расположен анализатор, и другим системным воздействиям.
 Подробнее о типах атак можно прочитать на https://github.com/HackTricks-wiki/hacktricks/blob/master/pentesting-web/xxe-xee-xml-external-entity.md
 Типы сценариев XXE (различные типы сценариев, с которыми вы можете столкнуться):
@@ -245,3 +251,229 @@ public void saxParseSafe(@RequestBody String xml, HttpServletResponse response) 
     response.getWriter().write(document.asXML());
 }
 ```
+
+## 2.	CWE-73: External Control of File Name or Path
+### 2.1. Описание
+
+![cwe-73_1.png](readme_img/cwe-73_1.png)
+ 
+Данная слабость возникает в случае, если приложение позволяет пользовательскому вводу контролировать или влиять на пути или имена файлов, используемые в операциях с файловой системой. Это может позволить злоумышленнику получить доступ или изменить системные файлы или другие файлы, критичные для приложения.
+Одним из примеров атаки с использованием данной слабости является Path Traversal.
+Как правило, такие атаки предполагают использование dot-dot-slash (('..\' или '../')) последовательностей (relative path traversal) или абсолютных путей вместо относительных (absolute path traversal). Для защиты необходимо применять различные способы валидации данных, получаемых от пользователя. Как правило, path traversal атаки, известные также как directory traversal, позволяют злоумышленнику работать с файлами и папками, к которым в обычном случае у него не должно быть доступа.
+Например, возьмем контроллер для скачивания изображений. Путь к файлу формируется при помощи конкатенации "c:\temp\" и имени файла, поступившего из GET-запроса:
+
+```java
+static final String BASE_DIRECTORY = "c:\\temp\\";
+
+@GetMapping("download-image-unsafe")
+public void downloadImageUnsafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
+
+    File f = new File(BASE_DIRECTORY + fileName);
+
+    if (f.exists() && !f.isDirectory()) {
+
+        MediaType mediaType = MediaTypeFactory.getMediaType(fileName)
+                .orElse(MediaType.APPLICATION_OCTET_STREAM);
+
+        response.setContentType(mediaType.toString());
+        response.setHeader("Content-Disposition", "attachment; filename=" + f.getName());
+
+        response.getOutputStream()
+                .write(("Resolved file name: " + f + "\n" + "Canonical pathname: "
+                        + f.getCanonicalPath() + "\n\n").getBytes());
+        response.getOutputStream().write(Files.readAllBytes(f.toPath()));
+    } else {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        response.getWriter().write("File doesn't exist or is not a file.");
+    }
+}
+```
+
+Передав в качестве параметра `filename=/../windows/system32/drivers/etc/hosts` мы смогли выйти за пределы каталога `c:\temp\`, поднявшись сначала на уровень выше, а потом попали в каталог `C:\Windows\System32\drivers\etc\` и скачали файл `hosts`:
+
+![cwe-73_2.png](readme_img/cwe-73_2.png)
+
+Влияние от атаки можно значительно уменьшить, если после пользовательского ввода добавлять некоторый текст, например:
+
+```java
+File picture = new File(BASE_DIRECTORY + fileName + ".jpeg");
+```
+
+Или проверив имя переданного в GET-запросе параметра:
+
+```java
+if (fileName.endsWith(".jpg")) {
+    File picture = new File(fileName);
+}
+```
+
+В таком случае за пределы каталога все равно можно выйти, но прочитать получится только файл с расширением jpg.
+
+#### "Null Byte Injection" или "Null Byte Poisoning"
+
+> Важно:
+Данный способ «смягчения» последствий крайне не рекомендуется использовать в качестве основной защиты от атаки типа path traversal, т.к. в старых версиях Java возможна инъекция Null Byte:
+Инъекция нулевого байта - это активная техника эксплуатации, используемая для обхода фильтров проверки целостности веб-инфраструктуры путем добавления в пользовательские данные символов нулевого байта, закодированных в URL (т.е. %00 или 0x00 в шестнадцатеричном формате). Нулевой байт представляет собой точку окончания строки или символ-разделитель, который означает немедленное прекращение обработки строки. Байты, следующие за разделителем, игнорируются. Такая инъекция может изменить логику работы приложения и позволить злоумышленнику получить несанкционированный доступ к системным файлам.
+Например, проверку расширения файла можно обойти, используя ввод вида secret.txt%00.jpg
+Инъекция нулевого байта в именах файлов была исправлена в Java начиная с версии jdk 7u40 b28
+Подробнее:
+>
+> http://projects.webappsec.org/w/page/13246949/Null-Byte-Injection
+> 
+> https://portswigger.net/blog/null-byte-attacks-are-alive-and-well
+> 
+> https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8014846
+
+### 2.2. Защитные меры
+Для предотвращения CWE-73 необходимо выполнять следующие рекомендации:
+1. Избегайте использования пользовательского ввода непосредственно в функциях, работающих с файлами;
+2. Выполняйте очистку и фильтрацию пользовательского ввода;
+3. Проверяйте результирующий путь перед выполнением операций чтения и записи;
+4. Для загрузки ресурсов используйте загрузчик класса, который может загружать файлы только из Classpath, например, `Class.getClassLoader().getResource()`, `Class.getResource()`, или `org.springframework.core.io.ResourceLoader`.
+
+### 2.3. Примеры
+#### *Пример 1. Небезопасное составление имени файла*
+Путь к файлу формируется при помощи конкатенации `c:\temp\` и имени файла, поступившего из GET-запроса.
+
+```java
+static final String BASE_DIRECTORY = "c:\\temp\\";
+
+@GetMapping("download-image-unsafe")
+public void downloadImageUnsafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
+
+    File f = new File(BASE_DIRECTORY + fileName);
+
+    if (f.exists() && !f.isDirectory()) {
+
+        MediaType mediaType = MediaTypeFactory.getMediaType(fileName)
+                .orElse(MediaType.APPLICATION_OCTET_STREAM);
+
+        response.setContentType(mediaType.toString());
+        response.setHeader("Content-Disposition", "attachment; filename=" + f.getName());
+
+        response.getOutputStream()
+                .write(("Resolved file name: " + f + "\n" + "Canonical pathname: "
+                        + f.getCanonicalPath() + "\n\n").getBytes());
+        response.getOutputStream().write(Files.readAllBytes(f.toPath()));
+    } else {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        response.getWriter().write("File doesn't exist or is not a file.");
+    }
+}
+```
+
+#### *Пример 2. Небезопасное составление имени файла*
+Путь к сохраняемому файлу формируется при помощи конкатенации пути к папке temp и имени файла (`file.getOriginalFilename()`), поступившего в POST-запросе.
+
+```java
+@PostMapping("upload-image-unsafe")
+public ResponseEntity<?> uploadImageUnsafe(@RequestParam("file") MultipartFile file) {
+    if (file == null) return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("File missing");
+    try {
+        String requestFileName = file.getOriginalFilename();
+        File resultFile = new File(System.getProperty("java.io.tmpdir") + requestFileName);
+
+        file.transferTo(resultFile);
+
+        String result = String.format("%s\tFile with requestFileName %s transferred to %s (resultPath: %s)"
+                , new Date(), requestFileName, resultFile, resultFile.getCanonicalPath());
+
+        return ResponseEntity.ok().body(result);
+    } catch (IOException e) {
+        e.printStackTrace();
+        return ResponseEntity.internalServerError().body(e.getMessage());
+    }
+}
+```
+
+Сформировав POST запрос вручную, можно подделать название файла, чтобы сохранить его в любое доступное для записи место:
+
+![cwe-73_3.png](readme_img/cwe-73_3.png)
+
+#### *Пример 3. Небезопасное составление имени файла*
+descartes-xsd-validation-ext - XsdController.java
+
+```java
+@PostMapping("upload")
+public XsdResponse upload(@RequestParam("file") MultipartFile file,
+                               RedirectAttributes redirectAttributes) {
+
+    File copied = new File(System.getProperty("java.io.tmpdir") + "/" + file.getOriginalFilename());
+    XsdResponse response;
+
+    try {
+        FileUtils.copyInputStreamToFile(file.getInputStream(), copied);
+```
+
+#### *Пример 4. Безопасное составление имени файла: нормализация и проверка результирующей директории*
+
+```java
+public static final String BASE_DIRECTORY = "/var/www/images/";
+
+public void downloadFile(String fileName) throws IOException {
+
+    File file = new File(BASE_DIRECTORY, fileName);
+    if (file.getCanonicalPath().startsWith(BASE_DIRECTORY)) {
+        // process file
+        doSomething();
+    } else
+        throw new RuntimeException(String.format("Не валидное имя файла. %s", fileName));
+}
+```
+
+#### *Пример 5. Безопасное составление имени файла: нормализация и проверка результирующей директории*
+
+```java
+static final String BASE_DIRECTORY = "c:\\temp\\";
+
+@GetMapping("download-image-safe")
+public void downloadImageSafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
+
+    File f = new File(BASE_DIRECTORY + fileName);
+
+    if (!f.getCanonicalPath().toLowerCase().startsWith(BASE_DIRECTORY)
+            || (!f.exists() && f.isDirectory())) {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        response.getWriter().write("File doesn't exist or is not a file.");
+    } else {
+        MediaType mediaType = MediaTypeFactory.getMediaType(fileName)
+                .orElse(MediaType.APPLICATION_OCTET_STREAM);
+        response.setContentType(mediaType.toString());
+        response.setHeader("Content-Disposition", "attachment; filename=" + f.getName());
+response.getOutputStream()
+        .write(("Resolved file name: " + f + "\n" + "Canonical pathname: "
+                + f.getCanonicalPath() + "\n\n").getBytes());
+        response.getOutputStream().write(Files.readAllBytes(f.toPath()));
+    }
+}
+```
+
+### *Пример 6. Безопасное составление имени файла: проверка регулярным выражением и очистка от «..»*
+
+```java
+static boolean checkFileName(final String fileName) {
+    final String pattern = "^[A-Za-z0-9.\\-\\_]{1,255}$";
+    return fileName.matches(pattern);
+}
+
+@PostMapping("upload")
+public XsdResponse upload(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
+    String fileName = file.getOriginalFilename();
+    if (fileName == null) {
+        throw new RuntimeException(String.format("Отсутсвует имя файла."));
+    }
+    if (!checkFileName(fileName)) {
+        throw new RuntimeException(String.format("Не валидное имя файла. %s", fileName));
+    }
+    fileName = fileName.replaceAll("\\.\\.", "");
+    File copied = new File(System.getProperty("java.io.tmpdir") + "/" + fileName);
+```
+
+Еще больше примеров неправильного и правильного написания кода:
+https://community.veracode.com/s/article/how-do-i-fix-cwe-73-external-control-of-file-name-or-path-in-java
+
+Подробней о CWE:
+* https://owasp.org/www-community/attacks/Path_Traversal
+* https://portswigger.net/web-security/file-path-traversal
+* https://learn.snyk.io/lesson/directory-traversal/
+
