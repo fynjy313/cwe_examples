@@ -1767,4 +1767,236 @@ public class SimpleVariableResolver implements XPathVariableResolver {
 2. XPATH INJECTION https://cqr.company/web-vulnerabilities/xpath-injection/
 3. Exploiting XPath Injection Weaknesses https://www.netspi.com/blog/technical-blog/web-application-pentesting/exploiting-xpath-injection-weaknesses/
 
+***
+
+## 9. CWE-652: Improper Neutralization of Data within XQuery Expressions ('XQuery Injection')
+### 9.1. Описание
+XQuery Injection – это вариант классической атаки SQL - инъекции на языке XML XQuery. Программное обеспечение использует внешний ввод для динамического создания выражения XQuery, используемого для извлечения данных из базы данных XML, но оно не нейтрализует или неправильно нейтрализует этот ввод, что позволяет злоумышленнику контролировать структуру запроса.
+
+В результате злоумышленник получит контроль над информацией, выбранной из базы данных XML, и сможет использовать эту способность для управления логикой приложения, получения неавторизованных данных или обхода важных проверок (например, аутентификации).
+
+Предположим, у нас есть система аутентификации пользователей на веб-странице, которая использует следующий XML – файл для хранения аутентификационных данных:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<users>
+    <user id="001">
+        <username>user</username>
+        <password>ee11cbb19052e40b07aac0ca060c23ee</password>
+        <group>Users</group>
+        <email>user@mail</email>
+    </user>
+    <user id="002">
+        <username>admin</username>
+        <password>21232f297a57a5a743894a0e4a801fc3</password>
+        <group>Administrators</group>
+        <email>admin@mail</email>
+    </user>
+</users>
+```
+
+После ввода имени пользователя и пароля приложение использует XQuery для поиска пользователя (определяет принадлежность пользователя к группе доступа):
+```java
+String query = "for $x in doc(\"src/main/users.xml\")/users/user " +
+      "where $x/username='" + user.getUsername() +
+      "' and $x/password='" + user.getPassword() +
+      "' return $x/group/text()";
+```
+
+Однако, поскольку выражение создается динамически путем объединения постоянной строки запроса и строки ввода пользователя, запрос ведет себя правильно, только если username или password не содержат кавычки. Если злоумышленник введет строку `admin' or '1'='1` вместо `username`, то запрос примет следующий вид:
+```xqy
+for $x in doc("src/main/users.xml")/users/user
+where $x/username='admin'
+or '1'='1' and $x/password='437b930db84b8079c2dd804a71936b5f'
+return $x/group/text()
+```
+
+Добавление условия `admin' or '` приводит к тому, что выражение XQuery всегда оценивается как истинное, поэтому запрос становится логически эквивалентным гораздо более простому запросу:
+`where $x/username='admin'`
+
+В результате, зная имя УЗ, но не зная пароля, мы претворяемся пользователем, включенным в группу Administrators, т.к. XQuery – выражение, вместо поиска элемента по совпадению логин + пароль, ищет только по совпадению логина:
+
+![cwe-652_1.png](readme_img/cwe-652_1.png)
+
+### 9.2. Защитные меры
+
+Защитные меры (на этапе реализации):
+1. Используйте параметризованные запросы XQuery. Это поможет обеспечить разделение между данными и командами;
+2. Правильно проверяйте вводимые пользователем данные. Отклоняйте данные, где это необходимо, фильтруйте, где это необходимо, и избегайте, когда это возможно. Убедитесь, что ввод, который будет использоваться в запросах XPath, безопасен в этом контексте;
+3. Предоставляйте минимальные полномочия учетной записи, от имени которой выполняются запросы;
+4. Применяйте белый список при ограниченном наборе возможных значений.
+5. Реализуйте правильную обработку ошибок.
+
+Правильная обработка ошибок помогает предотвратить использование злоумышленниками сообщений об ошибках для сбора информации о приложении или системе, на которой оно работает.
+
+Рассмотрим параметризованные запросы XQuery подробнее.
+В параметризованном запросе необходимо объявить, что будут использоваться внешние переменные и подставить их в запрос:
+```xml
+String query = "declare variable $username external;" +
+        "declare variable $password external;" +
+        "for $x in doc(\"" + XML_PATH + "\")/users/user " +
+        "where $x/username=$username and $x/password=$password " +
+        "return $x/group/text()";
+```
+
+Подстановка значений переменных производится с помощью метода `bindString`:
+```java
+XQDataSource ds = new SaxonXQDataSource();
+XQConnection conn = ds.getConnection();
+XQPreparedExpression expression = conn.prepareExpression(query);
+
+expression.bindString(new QName("username"), userName, null);
+expression.bindString(new QName("password"), DigestUtils.md5Hex(password), null);
+```
+
+Вводимые пользователем данные подставляются в уже скомпилированный запрос, и не могут повлиять на его логику:
+![cwe-652_2.png](readme_img/cwe-652_2.png)
+
+В параметризованных запросах имеется возможность задавать тип внешних данных, что делает данный способ еще более безопасным – см. javax.xml.xquery. XQDynamicContext:
+
+### 9.3. Примеры
+
+Во всех примерах используется XML файл users.xml с данными пользователей:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<users>
+    <user id="001">
+        <username>user</username>
+        <password>ee11cbb19052e40b07aac0ca060c23ee</password>
+        <group>Users</group>
+        <email>user@mail</email>
+    </user>
+    <user id="002">
+        <username>admin</username>
+        <password>21232f297a57a5a743894a0e4a801fc3</password>
+        <group>Administrators</group>
+        <email>admin@mail</email>
+    </user>
+</users>
+```
+
+#### *Пример 1. Некорректное использование*
+В данном примере введенные пользователем логин и пароль (его md5 hash) подставляются в XQuery выражение с помощью конкатенации. Проверка введенных значений не выполняется.
+```java
+@GetMapping("resolve-user-group-unsafe")
+public void resolveUserGroupUnsafe(@RequestParam String username, @RequestParam String password
+        , HttpServletResponse response) throws IOException, XQException {
+
+    //Инъекции в поле login: ' or '1'='1' or ' | admin' or '
+
+    String query = "for $x in doc(\"" + XML_PATH + "\")/users/user " +
+            "where $x/username='" + username + "' and $x/password='" + DigestUtils.md5Hex(password) +
+            "' return $x/group/text()";
+
+    XQDataSource ds = new SaxonXQDataSource();
+    XQConnection conn = ds.getConnection();
+    XQExpression expression = conn.createExpression();
+    XQResultSequence resultSequence = expression.executeQuery(query);
+
+    StringBuilder groups = new StringBuilder();
+    while (resultSequence.next()) {
+        if (!groups.isEmpty()) groups.append("\n");
+        groups.append(resultSequence.getItemAsString(null));
+    }
+
+    conn.close();
+    expression.close();
+    resultSequence.close();
+
+    if (!groups.isEmpty()) {
+        response.getWriter().write("User group (found using XQuery): " + groups);
+    } else throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user. Go away!");
+}
+```
+
+#### *Пример 2. Корректное использование – параметризация запроса*
+В данном примере используется параметризация запроса с помощью javax.xml.xquery.XQPreparedExpression:
+```java
+@GetMapping("resolve-user-group-safe")
+public void resolveUserGroupSafe(@RequestParam String username, @RequestParam String password
+        , HttpServletResponse response) throws IOException, XQException {
+
+    String query = "declare variable $username external;" +
+            "declare variable $password external;" +
+            "for $x in doc(\"" + XML_PATH + "\")/users/user " +
+            "where $x/username=$username and $x/password=$password " +
+            "return $x/group/text()";
+
+    XQDataSource ds = new SaxonXQDataSource();
+    XQConnection conn = ds.getConnection();
+    XQPreparedExpression expression = conn.prepareExpression(query);
+
+    expression.bindString(new QName("username"), username, null);
+    expression.bindString(new QName("password"), DigestUtils.md5Hex(password), null);
+
+    XQResultSequence resultSequence = expression.executeQuery();
+
+    StringBuilder groups = new StringBuilder();
+    while (resultSequence.next()) {
+        if (!groups.isEmpty()) groups.append("\n");
+        groups.append(resultSequence.getItemAsString(null));
+    }
+
+    conn.close();
+    expression.close();
+    resultSequence.close();
+
+    if (!groups.isEmpty()) {
+        response.getWriter().write("User group (found using XQuery): " + groups);
+    } else throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user. Go away!");
+}
+```
+
+#### *Пример 3. Корректное использование – параметризация запроса*
+В данном примере запрос вынесен в отдельный файл abc.xqy:
+```xqy
+declare variable $username external;
+declare variable $password external;
+for $x in doc("src/main/resources/xml/users.xml")/users/user
+where $x/username=$username
+and $x/password=$password
+return $x/group/text()
+```
+
+```java
+@GetMapping("resolve-user-group-safe2")
+public void resolveUserGroupSafeXqy(@RequestParam String username, @RequestParam String password
+        , HttpServletResponse response) throws IOException, XQException {
+
+    InputStream query = new FileInputStream(xqyPath);
+    XQDataSource ds = new SaxonXQDataSource();
+    XQConnection conn = ds.getConnection();
+    XQPreparedExpression expression = conn.prepareExpression(query);
+
+    expression.bindString(new QName("username"), username, null);
+    expression.bindString(new QName("password"), DigestUtils.md5Hex(password), null);
+
+    XQResultSequence resultSequence = expression.executeQuery();
+
+    StringBuilder groups = new StringBuilder();
+    while (resultSequence.next()) {
+        if (!groups.isEmpty()) groups.append("\n");
+        groups.append(resultSequence.getItemAsString(null));
+    }
+
+    conn.close();
+    expression.close();
+    resultSequence.close();
+
+    if (!groups.isEmpty()) {
+        response.getWriter().write("User group (found using XQuery): " + groups);
+    } else throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user. Go away!");
+}
+```
+
+### 9.4. Дополнительная литература
+1. https://coderlessons.com/tutorials/xml-tekhnologii/uznaite-xquery/xquery-kratkoe-rukovodstvo
+2. https://www.progress.com/xquery/resources/tutorials/xqj-tutorial/binding-external-variables
+3. http://www.cfoster.net/articles/xqj-tutorial/binding-java-variables.xml
+
+***
+
+
+
+
+
 
