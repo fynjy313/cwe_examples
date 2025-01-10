@@ -1543,6 +1543,228 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response) t
 
 ***
 
+## 7. CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')
+# TODO!
 
+***
+
+## 8. CWE-643: Improper Neutralization of Data within XPath Expressions ('XPath Injection')
+
+![cwe-643_1.png](readme_img/cwe-643_1.png)
+
+### 8.1. Описание
+XPath – гибкий, мощный, и простой инструмент для навигации по документам XML.
+
+Строка XPath описывает способ выбора нужных элементов (XmlNode) из массива элементов, которые могут содержать вложенные элементы. Начинается отбор с переданного множества элементов, на каждом шаге пути отбираются элементы, соответствующие выражению шага, и в результате оказывается отобрано подмножество элементов, соответствующих данному пути.
+
+Для примера возьмём следующий XML документ:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<users>
+    <user id="001">
+        <username>user</username>
+        <password>ee11cbb19052e40b07aac0ca060c23ee</password>
+        <group>Users</group>
+        <email>user@mail</email>
+    </user>
+    <user id="002">
+        <username>admin</username>
+        <password>21232f297a57a5a743894a0e4a801fc3</password>
+        <group>Administrators</group>
+        <email>admin@mail</email>
+    </user>
+</users>
+```
+
+XPath-путь `//users/user[username/text()=' admin' and password/text()='21232f297a57a5a743894a0e4a801fc3']` будет соответствовать элементу (пользователю) с ID=002.
+
+Как и в случае с SQL Injection, XPath Injection возникает, когда программное обеспечение использует внешний ввод для динамического создания выражения XPath, используемого для извлечения данных из базы данных XML, но оно не нейтрализует или неправильно нейтрализует этот ввод. Это позволяет злоумышленнику контролировать структуру запроса.
+
+В результате злоумышленник получит контроль над информацией, выбранной из базы данных XML, и сможет использовать эту способность для управления потоком приложений, изменения логики, получения неавторизованных данных или обхода важных проверок (например, аутентификации).
+
+XPath - стандартный язык; его нотация / синтаксис всегда не зависит от реализации, что означает, что атака может быть автоматизирована. Нет разных диалектов, как это происходит в запросах к базам данных SQL.
+
+Поскольку нет уровня контроля доступа, можно получить весь документ. Мы не столкнемся с какими-либо ограничениями, которые мы можем знать из атак с использованием SQL-инъекций.
+
+Предположим, у нас есть система аутентификации пользователей на веб-странице, которая использует следующий XML – файл для хранения аутентификационных данных:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<users>
+    <user id="001">
+        <username>user</username>
+        <password>ee11cbb19052e40b07aac0ca060c23ee</password>
+        <group>Users</group>
+        <email>user@mail</email>
+    </user>
+    <user id="002">
+        <username>admin</username>
+        <password>21232f297a57a5a743894a0e4a801fc3</password>
+        <group>Administrators</group>
+        <email>admin@mail</email>
+    </user>
+</users>
+```
+
+После ввода имени пользователя и пароля программа использует XPath для поиска пользователя (определяет принадлежность пользователя к группе доступа):
+
+```java
+XPathExpression xlogin = xPath.compile("//users/user[username/text()='" + userName +
+        "'and password/text()='" + DigestUtils.md5Hex(password) + "']/group/text()");
+```
+
+Если вместо логина ввести `admin' or '`, XPath – выражение примет следующий вид:
+
+```java
+XPathExpression xlogin = xPath.compile("//users/user[username/text()='admin' or ''and password/text()='ee11cbb19052e40b07aac0ca060c23ee']/group/text()");
+```
+
+В результате, зная имя УЗ, но не зная пароля, мы претворяемся пользователем, включенным в группу Administrators, т.к. XPath – выражение, вместо поиска элемента по совпадению логин + пароль, ищет только по совпадению логина:
+
+![cwe-643_2.png](readme_img/cwe-643_2.png)
+
+Если вместо логина ввести `'or contains(.,'adm') or'`, XPath – выражение примет следующий вид:
+
+```java
+XPathExpression xlogin = xPath.compile("//users/user[username/text()=''or contains(.,'adm') or''and password/text()='ee11cbb19052e40b07aac0ca060c23ee']/group/text()");
+```
+
+В результате, даже не зная правильного логина, мы претворяемся пользователем, включенным в группу Administrators, т.к. XPath – выражение, вместо поиска элемента по совпадению логин + пароль, ищет первого попавшегося пользователя с логином, содержащим в себе текст `adm`:
+
+![cwe-643_3.png](readme_img/cwe-643_3.png)
+
+
+### 8.2. Защитные меры
+
+Защитные меры (на этапе реализации):
+1. Используйте параметризованные запросы XPath (например, с помощью XQuery). Это поможет обеспечить разделение между данными и командами;
+> В отличие от большинства приложений баз данных, XPath не поддерживает концепцию параметризации запросов, но вы можете сымитировать эту концепцию, используя другие API, например, XQuery. Вместо формирования выражений в виде строк, передаваемых затем в синтаксический анализатор XPath для динамического выполнения во время исполнения, можно параметризировать запрос, создав внешний файл, хранящий его.
+2. Правильно проверяйте вводимые пользователем данные. Отклоняйте данные, где это необходимо, фильтруйте, где это необходимо, и избегайте, когда это необходимо. Убедитесь, что ввод, который будет использоваться в запросах XPath, безопасен в этом контексте;
+3. Применяйте белый список при ограниченном наборе возможных значений;
+4. Реализуйте правильную обработку ошибок.
+
+Правильная обработка ошибок помогает предотвратить использование злоумышленниками сообщений об ошибках для сбора информации о приложении или системе, на которой оно работает.
+
+### 8.3. Примеры
+
+Во всех примерах используется XML файл users.xml с данными пользователей:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<users>
+    <user id="001">
+        <username>user</username>
+        <password>ee11cbb19052e40b07aac0ca060c23ee</password>
+        <group>Users</group>
+        <email>user@mail</email>
+    </user>
+    <user id="002">
+        <username>admin</username>
+        <password>21232f297a57a5a743894a0e4a801fc3</password>
+        <group>Administrators</group>
+        <email>admin@mail</email>
+    </user>
+</users>
+```
+
+#### *Пример 1. Некорректное использование*
+В данном примере введенные пользователем логин и пароль (его md5 hash) подставляются в XPath выражение с помощью конкатенации. Проверка введенных значений не выполняется.
+```java
+@GetMapping("resolve-user-group-unsafe")
+public void resolveUserGroupUnsafe(@RequestParam String userName, @RequestParam String password
+        , HttpServletResponse response)
+        throws IOException, SAXException, XPathExpressionException, ParserConfigurationException {
+
+    //Инъекции в поле login: ' or '1'='1' or ' | admin' or ' | 'or contains(.,'adm') or'
+
+    DocumentBuilder documentBuilder = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder();
+    Document document = documentBuilder.parse(XML_PATH);
+
+    XPath xPath = XPathFactory.newInstance().newXPath();
+    XPathExpression xlogin = xPath.compile("//users/user[username/text()='" + userName +
+            "'and password/text()='" + DigestUtils.md5Hex(password) + "']/group/text()");
+
+    String group = xlogin.evaluate(document);
+    
+    if (!group.isEmpty()) {
+        response.getWriter().write("User group (found using XPath): " + group);
+    } else throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user. Go away!");
+}
+```
+
+#### *Пример 2. Корректное, но не рекомендуемое использование*
+В данном примере используется проверка введенного пользователем логина по черному списку (регулярным выражением). Способ не рекомендован, т.к. при составлении черных списков или использовании регулярных выражений легко ошибиться.
+```java
+@GetMapping("resolve-user-group-safe-sanitize")
+public void resolveUserGroupSafeSanitize(@RequestParam String userName, @RequestParam String password
+        , HttpServletResponse response)
+        throws IOException, SAXException, XPathExpressionException, ParserConfigurationException {
+
+    if (Pattern.matches("^.*\\W.*$", userName)) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    } else {
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder();
+        Document document = documentBuilder.parse(XML_PATH);
+
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        XPathExpression xlogin = xPath.compile("//users/user[username/text()='" + userName +
+                "'and password/text()='" + DigestUtils.md5Hex(password) + "']/group/text()");
+        String group = xlogin.evaluate(document);
+
+        if (!group.isEmpty()) {
+            response.getWriter().write("User group (found using XPath): " + group);
+        } else throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user. Go away!");
+    }
+}
+```
+
+#### *Пример 3. Корректное использование – параметризация запроса*
+В данном примере используется параметризация запроса с помощью javax.xml.xpath.XPathVariableResolver.
+```java
+@GetMapping("resolve-user-group-safe-param")
+public void resolveUserGroupSafeParam(@RequestParam String userName, @RequestParam String password
+        , HttpServletResponse response)
+        throws IOException, SAXException, XPathExpressionException, ParserConfigurationException {
+    //Для параметризации используется javax.xml.xpath.XPathVariableResolver
+
+    DocumentBuilder documentBuilder = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder();
+    Document document = documentBuilder.parse(XML_PATH);
+    SimpleVariableResolver resolver = new SimpleVariableResolver();
+
+    resolver.addVariable(new QName("username"), userName);
+    resolver.addVariable(new QName("password"), DigestUtils.md5Hex(password));
+
+    XPath xPath = XPathFactory.newInstance().newXPath();
+    xPath.setXPathVariableResolver(resolver);
+
+    XPathExpression xlogin = xPath.compile("//users/user[username/text()=$username " +
+            "and password/text()=$password]/group/text()");
+    String group = xlogin.evaluate(document);
+
+    if (!group.isEmpty()) {
+        response.getWriter().write("User group (found using XPath): " + group);
+    } else throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user. Go away!");
+}
+
+public class SimpleVariableResolver implements XPathVariableResolver {
+    private static final Map<QName, Object> vars = new HashMap<>();
+
+    public void addVariable(QName name, Object value) {
+        vars.put(name, value);
+    }
+
+    public Object resolveVariable(QName name) {
+        return vars.get(name);
+    }
+}
+```
+
+#### *Пример 4. Корректное использование – параметризация запроса с помощью javax.xml.xquery.XQPreparedExpression*
+См. 9. XQuery Injection
+
+### 8.4. Дополнительная литература
+1. https://learn.snyk.io/lesson/xpath-injection/
+2. XPATH INJECTION https://cqr.company/web-vulnerabilities/xpath-injection/
+3. Exploiting XPath Injection Weaknesses https://www.netspi.com/blog/technical-blog/web-application-pentesting/exploiting-xpath-injection-weaknesses/
 
 
