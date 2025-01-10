@@ -308,6 +308,7 @@ public void saxParseSafe(@RequestBody String xml, HttpServletResponse response) 
 }
 ```
 
+***
 
 ## 2.	CWE-73: External Control of File Name or Path
 ### 2.1. Описание
@@ -533,6 +534,8 @@ https://community.veracode.com/s/article/how-do-i-fix-cwe-73-external-control-of
 * https://owasp.org/www-community/attacks/Path_Traversal
 * https://portswigger.net/web-security/file-path-traversal
 * https://learn.snyk.io/lesson/directory-traversal/
+
+***
 
 ## 3. CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')
 
@@ -954,6 +957,7 @@ http://www.orafaq.com/wiki/SQL_FAQ#How_does_one_escape_special_characters_when_w
 9. JPA Query Parameters Usage
 https://www.baeldung.com/jpa-query-parameters
 
+***
 
 ## 4. CWE-94: Improper Control of Generation of Code ('Code Injection')
 
@@ -1084,6 +1088,7 @@ https://application.security/free-application-security-training/understanding-ap
 4. https://github.com/lucy9x/JNDI-Exploit-Kit
 5. https://github.com/Jeromeyoung/JNDIExploit-1
 
+***
 
 ## 5.	CWE-77: Improper Neutralization of Special Elements used in a Command ('Command Injection')
 
@@ -1319,4 +1324,225 @@ String escape = inputCmd.replaceAll("[^a-zA-Z 0-9]","_");
 3.	Проверяйте команды и аргументы по белым и/или черным спискам;
 4.	Не допускайте наличие символов ``& |  ; $ > < ` \ ! ' " ( ) 0x0a`` во входных данных;
 5.	Используйте принцип наименьших привилегий для учетной записи, под которой работает приложение.
+
+***
+
+## 6. CWE-918: Server-Side Request Forgery (SSRF)
+
+![cwe-918_1.png](readme_img/cwe-918_1.png)
+
+### 6.1. Описание
+
+Server-Side Request Forgery — это дефект безопасности, который позволяет злоумышленнику отправлять запросы от имени скомпрометированного сервера.
+
+Например, риск атаки SSRF может возникнуть, если приложение для формирования запросов использует непроверенные внешние данные. Злоумышленник может спровоцировать отправку вредоносных запросов к ресурсам, которые не доступны напрямую ему самому, но доступны серверу.
+
+Ещё один вариант эксплуатации SSRF – маскировка запросов. Злоумышленник "прикрывается" уязвимым сервером (посредником), для выполнения запросов к другому серверу (целевому). В таком случае со стороны целевого сервера будет казаться, что все запросы инициируются посредником, хотя он является лишь промежуточным звеном.
+
+Стоит отметить:
+* SSRF не ограничивается протоколом HTTP. Как правило, первым запросом является HTTP, но в случаях, когда приложение само выполняет второй запрос, оно может использовать различные протоколы (например, FTP, SMB, SMTP и т. д.) и схемы (например, file://, dict://, sftp://,  ldap://, tftp://, gopher:// и т. д.).
+* Если приложение уязвимо к инъекции XML eXternal Entity (XXE), то это может быть использовано для проведения SSRF-атаки.
+
+Если злоумышленник может контролировать направление запросов на стороне сервера, он потенциально может выполнить следующие действия:
+* Злоупотреблять доверительными отношениями между уязвимым сервером и другими серверами;
+* Обходить ограничения на основе белых списков IP-адресов;
+* Обходить службы аутентификации на основе хоста;
+* Читать ресурсы, недоступные для публичного доступа, такие как trace.axd в ASP.NET или API метаданных в среде AWS;
+* Сканировать внутренние сети, к которым подключен уязвимый сервер;
+* Считывать файлы с веб-сервера;
+* Просматривать страницы состояния и взаимодействовать с API от имени уязвимого веб-сервера;
+* Получать конфиденциальную информацию, например, IP-адреса веб-сервера, находящегося за обратным прокси.
+
+Типичная схема эксплуатации уязвимости подделки запросов на стороне сервера:
+
+![cwe-918_2.png](readme_img/cwe-918_2.png)
+
+### 6.2. Защитные меры
+
+Для предотвращения подделки запросов на стороне сервера (SSRF) необходимо выполнять следующие рекомендации:
+1.	Используйте белый список разрешенных доменов и протоколов, из которых веб-сервер может получать удаленные ресурсы
+> Не используйте черный список! У черных списков и regex одна и та же проблема: кто-то рано или поздно найдет способ их обойти (см. п.3).
+
+> Данный метод не защитит от атак типа TOCTOU (Time of Check to Time of Use).
+Проблема в том, что IP-адрес запрашивается дважды: первый раз для его проверки, а второй - для выполнения запроса. Очень просто создать DNS-сервер, который будет отвечать другим IP-адресом на каждый второй запрос. В этом случае при проверке IP-адреса он может оказаться внешним IP-адресом и пройти проверку, но затем, когда будет сделан запрос, имя хоста разрешится в опасный внутренний адрес, что позволит повысить уровень SSRF.
+
+2. Избегайте использования пользовательского ввода непосредственно в функциях, которые могут выполнять запросы от имени сервера;
+3. Выполняйте очистку и фильтрацию пользовательского ввода
+
+>Важно!
+Данный метод крайне не рекомендуется применять, т.к. практически невозможно охватить все различные сценарии, например, злоумышленник может использовать закодированные IP-адреса, которые будут преобразованы в IP во внутренней сети:
+>* http://localhost:80
+>* http://127.0.0.1:80
+>* http://0.0.0.0:80
+>* http://[::]:80/
+>* http://[0000::1]:80/
+>* http://0/
+>* http://⓵⓶⓻.⓪.⓪.⓵/
+
+>Больше примеров на
+https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Request%20Forgery
+и
+https://0xn3va.gitbook.io/cheat-sheets/web-application/server-side-request-forgery
+4. Не отправляйте необработанное тело ответа от сервера клиенту
+5. Принудительно используйте только необходимые схемы URL:
+Разрешите только те схемы URL, которые использует ваше приложение. Нет необходимости разрешать ftp://, file:/// или даже http://, если вы используете только https://;
+6. Включайте аутентификацию для всех служб:
+Убедитесь, что аутентификация включена для всех служб, работающих в вашей сети.
+
+### 6.3. Примеры
+
+#### *Пример 1. Некорректное использование*
+В данном примере отсутствуют какие-либо проверки пользовательского ввода, а сам результат выполнения запроса просто перенаправляется пользователю.
+
+```java
+@GetMapping("open-stream-unsafe")
+// test on http://httpforever.com or http://example.com to prevent SSL exceptions
+public String openStreamToRemoteObjectUnsafe(@RequestParam String location) throws Exception {
+    URL url = new URI(location).toURL();
+    BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+    return reader.lines().collect(Collectors.joining());
+}
+```
+
+#### *Пример 2. Некорректное использование*
+В данном случае, например, используя схему `file://` можно получить доступ к локальным файлам.
+```java
+@GetMapping("download-file-unsafe")
+public void downloadFileUnsafe(String location, HttpServletResponse response) throws IOException, URISyntaxException {
+    // remote image: /ssrf/download-file-unsafe?location=http://eu.httpbin.org/image/jpeg
+    // SSRF exp: location=file:///G:/work/new_ptai_policy.json
+    // SSRF exp: location=file:///etc/passwd
+    URL url = new URI(location).toURL();
+    response.setHeader("content-disposition", "attachment;fileName=" + url.getFile());
+    int length;
+    byte[] bytes = new byte[1024];
+    InputStream inputStream = url.openStream(); // send request
+    OutputStream outputStream = response.getOutputStream();
+    while ((length = inputStream.read(bytes)) > 0) {
+        outputStream.write(bytes, 0, length);
+    }
+}
+```
+
+#### *Пример 3. Корректное, но не рекомендуемое использование*
+В данном примере производится проверка протокола и IP адреса. Использовать не рекомендуется, т.к. это вариация черного списка.
+```java
+    @GetMapping("download-file-safe")
+    public void downloadFileSafe(@RequestParam String location, HttpServletResponse response) throws Exception {
+        // Проверяем протокол, запрещаем локальные адреса и отключаем редиректы.
+        // Не рекомендуется использовать, т.к. это по сути вариант черного списка
+        // Данный метод не защитит от атак типа TOCTOU (Time of Check to Time of Use)
+        URL url = new URI(location).toURL();
+        InetAddress inetAddress = InetAddress.getByName(url.getHost());
+
+        if (!url.getProtocol().startsWith("http")) {
+            // Возвращать клиенту ошибку нельзя, это только для примера
+            response.getWriter().write("Wrong protocol: " + url.getProtocol());
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+//            throw new Exception("Forbidden remote source");
+
+        } else if (inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress() || inetAddress.isLinkLocalAddress()) {
+            response.getWriter().write("Wrong ip address: " + inetAddress);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+
+        } else {// All checks OK. Processing...
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setInstanceFollowRedirects(false);
+            conn.connect();
+            conn.getInputStream().transferTo(response.getOutputStream());
+        }
+    }
+```
+
+#### *Пример 4. Корректное использование – белый список*
+```java
+@GetMapping("open-stream-safe")
+// test on http://httpforever.com or http://example.com to prevent SSL exceptions
+public String openStreamToRemoteObjectSafe(@RequestParam String location) throws Exception {
+    URL url = new URI(location).toURL();
+
+    if (!url.getHost().equals("example.com") ||
+            !url.getProtocol().equals("http") && !url.getProtocol().equals("https")) {
+        throw new Exception("Forbidden remote source");
+    }
+
+    BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+    return reader.lines().collect(Collectors.joining());
+}
+```
+
+#### *Пример 5. Некорректное использование*
+При формировании URL с помощью конкатенации возможна эксплуатация SSRF. Примеры специальных запросов приведены в комментариях.
+```java
+@GetMapping("open-page-unsafe")
+public String openPageUnsafe(@RequestParam String location) throws URISyntaxException, IOException {
+    /*Согласно RFC 3986 (https://www.rfc-editor.org/info/rfc3986)
+    символы ';' и '@' являются зарезервированными символами, относящимися к sub-delims и gen-delims соответственно,
+    и могут (или не могут) быть определены в качестве разделителей (зависит от реализации)*/
+
+    // ssrf/open-page-unsafe?location=/anything - OK
+    // ssrf/open-page-unsafe?location=;@httpforever.com - SSRF
+    // ssrf/open-page-unsafe?location=;@eu.httpbin.org/image/jpeg - SSRF
+
+    URL url = new URI("http://eu.httpbin.org" + location).toURL();
+    System.out.printf("url: %s\nhost: %s\n", url, url.getHost());
+    BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+
+    return reader.lines().collect(Collectors.joining());
+}
+```
+
+#### *Пример 6. Корректное, но не рекомендуемое использование*
+В данном примере URL строится при помощи Spring-web’s UriComponentsBuilder. Способ довольно надежный, но не дает 100 % гарантии предотвращения SSRF.
+```java
+@GetMapping("open-page-safe")
+public String openPageSafe(@RequestParam String location) throws IOException {
+    // Test request: /ssrf/open-page-safe?location=;@httpforever.com
+    URL resultUrl = UriComponentsBuilder.newInstance()            .scheme("http").host("eu.httpbin.org").path("anything/").path(location).build().toUri().toURL();
+    
+    BufferedReader reader = new BufferedReader(new InputStreamReader(resultUrl.openStream()));
+
+    return reader.lines().collect(Collectors.joining());
+}
+```
+
+#### *Пример 7. Корректное использование – белый список*
+```java
+private static final List<String> VALID_URI = Arrays.asList("https://qwe.rty", "https://asd.fgh");
+private HttpClient client = HttpClient.newHttpClient();
+
+@Override
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    try {
+        URI uri = new URI(request.getParameter("uri"));
+
+        // BAD: a request parameter is incorporated without validation into a HTTP request
+        HttpRequest r = HttpRequest.newBuilder(uri).build();
+        client.send(r, null);
+
+        // GOOD: the request parameter is validated against a known fixed list
+        if (VALID_URI.contains(request.getParameter("uri"))) {
+            HttpRequest r2 = HttpRequest.newBuilder(uri).build();
+            client.send(r2, null);
+        }
+    } catch (URISyntaxException | InterruptedException e) {
+        throw new RuntimeException(e);
+    }
+}
+```
+
+### 6.4. Дополнительная литература
+1. https://cwe.mitre.org/data/definitions/918.html
+2. https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
+3. https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Request%20Forgery
+4. https://dzone.com/articles/the-server-side-request-forgery-vulnerability-and
+5. https://blog.intigriti.com/hackademy/server-side-request-forgery-ssrf
+6. https://pvs-studio.ru/ru/blog/terms/6576/
+7. https://brightsec.com/blog/ssrf-server-side-request-forgery
+8. https://0xn3va.gitbook.io/cheat-sheets/web-application/server-side-request-forgery
+
+***
+
+
+
 
