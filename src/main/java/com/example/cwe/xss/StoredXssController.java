@@ -22,10 +22,10 @@ public class StoredXssController {
     private final List<FeedBackObj> feedBackObjs = new ArrayList<>();
 
 
-    @GetMapping("/feedback")
+    @GetMapping("/")
     public String feedBack(Model model) {
         model.addAttribute("feedBacks", feedBackObjs);
-        return "feedback";
+        return "xss-page";
     }
 
     /**

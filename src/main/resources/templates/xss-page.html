@@ -1,20 +1,21 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
-    <title>Feedback page - Stored XXS example</title>
+    <title>XSS examples</title>
 </head>
 <body>
-<h1>Feedback page - Stored XXS example</h1>
+<h1>Cross-Site Scripting (XSS) examples</h1>
 <hr>
 
-<h2>Отзывы пользователей</h2>
+<h2>Stored XXS example</h2>
+<h3>Отзывы пользователей</h3>
 
 <input id="sendFeedBack" name="feedBackForm" type="text" th:name="feedBackForm1"
        placeholder="Напиши пару ласковых :-)" style="width:60%"/>
 <button id="sendFeedBack-button" class="btn btn-danger" onclick="sendFeedBack()">Send!</button>
 <br>
-<sub><i>p.s. можешь попробовать ввести &lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;</i></sub>
+<sub><i>Можешь попробовать ввести &lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;</i></sub>
 
 <script>
     async function sendFeedBack(){
@@ -63,6 +64,21 @@
     </tr>
     </tbody>
 </table>
+
+<hr>
+
+<h2>Reflected XXS examples</h2>
+
+<!--<script>alert('XSS')</script>-->
+<pre><i>Пример 1: GET запрос на '/xss/exp' вернет '&lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;'</i></pre>
+<button type="button" th:onclick="|window.location.href='/xss/exp'|"> try 1! </button>
+<!--<script>alert(%27reflected%20XSS%27)</script>-->
+<pre>Пример 2: GET запрос, возвращающий значение отправленного параметра: '/xss/reflected?name=&lt;script&gt;alert(%27reflected%20XSS%27)&lt;/script&gt;'</pre>
+<input id="doHello" name="helloForm" type="text" th:name="helloForm"
+       placeholder="Your name ..." style="width:60%"/>
+<button type="button" th:onclick="|window.location.href='/xss/reflected?name=<script>alert(%27reflected%20XSS%27)</script>'|"> try 2! </button>
+
+
 
 <div style="color:grey" class="footer_copyright">
     <hr>

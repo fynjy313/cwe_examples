@@ -637,7 +637,7 @@ static boolean checkFileName(final String fileName) {
 public XsdResponse upload(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
     String fileName = file.getOriginalFilename();
     if (fileName == null) {
-        throw new RuntimeException(String.format("Отсутсвует имя файла."));
+        throw new RuntimeException("Отсутсвует имя файла.");
     }
     if (!checkFileName(fileName)) {
         throw new RuntimeException(String.format("Не валидное имя файла. %s", fileName));
