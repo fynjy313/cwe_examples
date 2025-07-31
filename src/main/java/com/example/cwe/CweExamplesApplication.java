@@ -10,6 +10,8 @@ public class CweExamplesApplication {
 //	https://dev.to/abdelrani/error-handling-in-spring-web-using-rfc-9457-specification-5dj1
     //TODO: SOP, CORS exp?
 
+    //TODO: doFilter! Test difference between redirect and forward! https://javarush.com/quests/lectures/questservlets.level12.lecture05
+
     public static void main(String[] args) {
         SpringApplication.run(CweExamplesApplication.class, args);
     }

