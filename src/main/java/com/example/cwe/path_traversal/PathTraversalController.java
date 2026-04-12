@@ -19,13 +19,14 @@ import java.util.Date;
 @RequestMapping("path-traversal")
 @SuppressWarnings("unused")
 public class PathTraversalController {
-    //TODO: temp folder for other OS - exp %tempdir%
-    static final String BASE_DIRECTORY = "c:\\temp\\";
+    //TODO: temp folder for other OS - exp %tempdir%             File resultFile = new File(System.getProperty("java.io.tmpdir") + requestFileName);
+//    static final String BASE_DIRECTORY = "c:\\temp\\";
+    static final String BASE_DIRECTORY = System.getProperty("java.io.tmpdir");
     private static final Logger logger = LogManager.getLogger(PathTraversalController.class);
 
-    @GetMapping("download-image-unsafe")
+    //TODO: return abs path in response
+    @GetMapping("download-file-unsafe")
     public void downloadImageUnsafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
-
         File f = new File(BASE_DIRECTORY + fileName);
 
         if (f.exists() && !f.isDirectory()) {
@@ -53,12 +54,12 @@ public class PathTraversalController {
     }
 
 
-    @GetMapping("download-image-safe")
+    @GetMapping("download-file-safe")
     public void downloadImageSafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
 
         File f = new File(BASE_DIRECTORY + fileName);
 
-        if (!f.getCanonicalPath().toLowerCase().startsWith(BASE_DIRECTORY)
+        if (!f.getCanonicalPath().toLowerCase().startsWith(BASE_DIRECTORY.toLowerCase())
                 || (!f.exists() && f.isDirectory())) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.getWriter().write("File doesn't exist or is not a file.");
@@ -75,12 +76,12 @@ public class PathTraversalController {
     }
 
 
-    @PostMapping("upload-image-unsafe")
+    @PostMapping("upload-file-unsafe")
     public ResponseEntity<?> uploadImageUnsafe(@RequestParam("file") MultipartFile file) {
         if (file == null) return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("File missing");
         try {
             String requestFileName = file.getOriginalFilename();
-            File resultFile = new File(System.getProperty("java.io.tmpdir") + requestFileName);
+            File resultFile = new File(BASE_DIRECTORY + requestFileName);
 
             file.transferTo(resultFile);
 
@@ -94,7 +95,7 @@ public class PathTraversalController {
         }
     }
 
-    @PostMapping("upload-image-safe")
+    @PostMapping("upload-file-safe")
     public ResponseEntity<?> uploadImageSafe(@RequestParam("file") MultipartFile file) throws IOException {
         if (file == null) return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("File missing");
 
@@ -105,7 +106,7 @@ public class PathTraversalController {
         }
         requestFileName = requestFileName.replaceAll("\\.\\.", "");
 
-        File resultFile = new File(System.getProperty("java.io.tmpdir") + requestFileName);
+        File resultFile = new File(BASE_DIRECTORY + requestFileName);
         file.transferTo(resultFile);
 
         String result = String.format("%s\tFile with requestFileName %s transferred to %s (resultPath: %s)"

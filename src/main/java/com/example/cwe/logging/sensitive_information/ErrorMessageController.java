@@ -33,6 +33,7 @@ public class ErrorMessageController {
     /**
      * SQL injection unsafe.
      *
+     * @return - результат без обработки - так делать нельзя, т.к. это раскрывает чувствительные данные
      * @code HQL_UNSAFE = "FROM Product t WHERE t.name='" + name + "'"
      * @injection name = %27%20or%20%271%27=%271
      */
@@ -46,6 +47,7 @@ public class ErrorMessageController {
      * SQL injection unsafe.
      *
      * @param name Название товара
+     * @return - возвращает заданную ошибку, не раскрывая чувствительных данных - так делать правильно
      * @code HQL_UNSAFE = "FROM Product t WHERE t.name='" + name + "'"
      * @injection name = q' or 1=1'
      */
@@ -62,6 +64,9 @@ public class ErrorMessageController {
 
     private static final Logger logger = LogManager.getLogger(ErrorMessageController.class);
 
+    /**
+     * @return - возвращает заданную ошибку, не раскрывая чувствительных данных - так делать правильно
+     */
     @GetMapping("/check_product_safe/{name}")
     public String isProductExistSafety(@PathVariable String name) {
         try {

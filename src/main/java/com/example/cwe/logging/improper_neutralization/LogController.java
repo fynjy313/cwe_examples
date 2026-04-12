@@ -46,9 +46,7 @@ public class LogController {
         // Print some output: goes to your special stream
         System.out.println("Foofoofoo!");
 
-
         logger.error(text);
-
 
         // Put things back
         System.out.flush();
@@ -56,7 +54,6 @@ public class LogController {
 
         // Show what happened
         System.out.println("Here: " + baos);
-
 
         return ResponseEntity.ok(baos.toString());
     }

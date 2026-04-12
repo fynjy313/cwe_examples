@@ -72,7 +72,7 @@ public class SsrfController {
 
     @GetMapping("download-file-unsafe")
     public void downloadFileUnsafe(@RequestParam String location, HttpServletResponse response) throws IOException, URISyntaxException {
-        // remote image: /ssrf/download-file?location=http://httpbin.org/image/jpeg
+        // remote image: /ssrf/download-file-unsafe?location=http://httpbin.org/image/jpeg
         // SSRF exp: location=file:///G:/work/new_ptai_policy.json
         // SSRF exp: location=file:///etc/passwd
         URL url = new URI(location).toURL();

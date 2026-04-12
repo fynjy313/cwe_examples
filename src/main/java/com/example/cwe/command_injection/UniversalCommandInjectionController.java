@@ -16,13 +16,37 @@ import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("cmd")
-public class CommandInjectionController {
-    //TODO: problems with encoding in chrome
+public class UniversalCommandInjectionController {
+
+    // Определение операционной системы
+    private static final String OS = System.getProperty("os.name").toLowerCase();
+    private static final boolean IS_WINDOWS = OS.contains("win");
+    private static final boolean IS_UNIX = OS.contains("nix") || OS.contains("nux") || OS.contains("mac");
+
+    // Получение командной оболочки и флага для выполнения команды в зависимости от ОС
+    private static String getShell() {
+        if (IS_WINDOWS) {
+            return "cmd /c";
+        } else if (IS_UNIX) {
+            return "sh -c";
+        } else {
+            throw new UnsupportedOperationException("Неподдерживаемая операционная система: " + OS);
+        }
+    }
+
+
+    // TODO: problems with encoding in chrome
     @GetMapping("ping")
     public String executePingCommand(@RequestParam String ip) throws IOException {
         // http://localhost:7171/ping?ip=127.0.0.2 %26 dir %26 whoami /groups
-        String command = "cmd /c ping -n 1 " + ip;
-        Process p = Runtime.getRuntime().exec(command);
+        String pingCommand = getShell();
+        if (IS_WINDOWS) {
+            pingCommand += "ping -n 1 " + ip;
+        } else {
+            pingCommand += "ping -c 1 " + ip;
+        }
+
+        Process p = Runtime.getRuntime().exec(pingCommand);
 
         BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
@@ -38,7 +62,14 @@ public class CommandInjectionController {
 
     @GetMapping("pingPb1")
     public String pingProcessUnsafe(@RequestParam String ip) throws IOException {
-        ProcessBuilder pb = new ProcessBuilder("cmd", "/c", "ping -n 1 " + ip);
+        String pingCommand = getShell();
+        if (IS_WINDOWS) {
+            pingCommand += "ping -n 1 " + ip;
+        } else {
+            pingCommand += "ping -c 1 " + ip;
+        }
+
+        ProcessBuilder pb = new ProcessBuilder(pingCommand);
         System.out.println(pb.command());
         Process p = pb.start();
 
@@ -56,7 +87,21 @@ public class CommandInjectionController {
 
     @GetMapping("pingPb2")
     public String pingProcessSafe(@RequestParam String ip) throws IOException {
-        ProcessBuilder pb = new ProcessBuilder("cmd", "/c", "ping -n 1 ", ip);
+        List<String> command = new ArrayList<>();
+
+        if (IS_WINDOWS) {
+            command.add("ping");
+            command.add("-n");
+            command.add("1");
+            command.add(ip);
+        } else {
+            command.add("ping");
+            command.add("-c");
+            command.add("1");
+            command.add(ip);
+        }
+
+        ProcessBuilder pb = new ProcessBuilder(command);
         System.out.println(pb.command());
         Process p = pb.start();
 
@@ -86,7 +131,15 @@ public class CommandInjectionController {
         allowedCommands.add("locate");
         allowedCommands.add("hostname");
 
+        // Добавляем Windows-команды
+        allowedCommands.add("dir");
+        allowedCommands.add("type");
+        allowedCommands.add("echo");
+        allowedCommands.add("systeminfo");
+        allowedCommands.add("tasklist");
+
         denyArguments.add("-exec");
+        denyArguments.add("/exec");
     }
 
     @GetMapping("cmdSafety")
@@ -117,8 +170,6 @@ public class CommandInjectionController {
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
 
-        // ... start process, handle exit value, input and error streams, return result
-
         System.out.println(pb.command());
         Process p = pb.start();
 
@@ -135,31 +186,31 @@ public class CommandInjectionController {
     }
 
     @GetMapping("cmdRuntimeSafe")
-    public String execRuntimeCommandSafety(@RequestParam String inputCmd) throws IOException {
-        if (inputCmd == null || inputCmd.isEmpty()) {
+    public String execRuntimeCommandSafety(@RequestParam String command) throws IOException {
+        if (command == null || command.isEmpty()) {
             throw new IllegalArgumentException("Укажите команду");
         }
 
-        if (Pattern.matches("^.*(([&|;$><`\\\\!'\"()])|(0x0[Aa])).*$", inputCmd)) {
-            System.out.println("Недопустимая команда");
-        }
-        String strip = inputCmd.replaceAll("[&|;$><`\\\\!'\"()]+", "");
-        String strip2 = inputCmd.replaceAll("[^a-zA-Z 0-9]", "");
-        String escape = inputCmd.replaceAll("[^a-zA-Z 0-9]", "_");
-
-        final String[] command = inputCmd.split(" ");
-
-        if (!allowedCommands.contains(command[0].toLowerCase())) {
+        if (Pattern.matches("^.*(([&|;$><`\\\\!'\"()])|(0x0[Aa])).*$", command)) {
             throw new IllegalArgumentException("Недопустимая команда");
         }
-        for (String arg : command) {
+
+        String strip = command.replaceAll("[&|;$><`\\\\!'\"()]+", "");
+        String strip2 = command.replaceAll("[^a-zA-Z 0-9]", "");
+        String escape = command.replaceAll("[^a-zA-Z 0-9]", "_");
+
+        final String[] cmd = command.split(" ");
+
+        if (!allowedCommands.contains(cmd[0].toLowerCase())) {
+            throw new IllegalArgumentException("Недопустимая команда");
+        }
+        for (String arg : cmd) {
             if (denyArguments.contains(arg.toLowerCase())) {
                 throw new IllegalArgumentException("Недопустимый аргумент");
             }
         }
-        // ... start process, handle exit value, input and error streams, return result
 
-        Process p = Runtime.getRuntime().exec(command);
+        Process p = Runtime.getRuntime().exec(cmd);
         BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
         String line;
         StringBuilder sb = new StringBuilder();
@@ -172,9 +223,15 @@ public class CommandInjectionController {
         return sb.toString();
     }
 
+    // Вспомогательный метод для проверки ОС
+    @GetMapping("os-info")
+    public String getOSInfo() {
+        return String.format("Операционная система: %s\nWindows: %s\nUnix: %s\nShell: %s",
+                OS, IS_WINDOWS, IS_UNIX, getShell());
+    }
+
     @GetMapping("/")
     public String index() {
         return "Hello World!";
     }
-
 }
