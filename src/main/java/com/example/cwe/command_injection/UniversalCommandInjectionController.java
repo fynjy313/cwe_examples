@@ -41,9 +41,9 @@ public class UniversalCommandInjectionController {
         // http://localhost:7171/ping?ip=127.0.0.2 %26 dir %26 whoami /groups
         String pingCommand = getShell();
         if (IS_WINDOWS) {
-            pingCommand += "ping -n 1 " + ip;
+            pingCommand += "\"ping -n 1 " + ip + "\"";
         } else {
-            pingCommand += "ping -c 1 " + ip;
+            pingCommand += "\"ping -c 1 " + ip + "\"";
         }
 
         Process p = Runtime.getRuntime().exec(pingCommand);
@@ -64,9 +64,9 @@ public class UniversalCommandInjectionController {
     public String pingProcessUnsafe(@RequestParam String ip) throws IOException {
         String pingCommand = getShell();
         if (IS_WINDOWS) {
-            pingCommand += "ping -n 1 " + ip;
+            pingCommand += "\"ping -n 1 " + ip + "\"";
         } else {
-            pingCommand += "ping -c 1 " + ip;
+            pingCommand += "\"ping -c 1 " + ip + "\"";
         }
 
         ProcessBuilder pb = new ProcessBuilder(pingCommand);
@@ -143,9 +143,7 @@ public class UniversalCommandInjectionController {
     }
 
     @GetMapping("cmdSafety")
-    public String execCommandSafety(
-            @RequestParam(value = "command") String command,
-            @RequestParam(value = "args[]", required = false) List<String> args) throws IOException {
+    public String execCommandSafety(@RequestParam(value = "command") String command, @RequestParam(value = "args[]", required = false) List<String> args) throws IOException {
         final List<String> cmd = new ArrayList<>();
 
         if (command == null || command.isEmpty()) {
@@ -226,8 +224,7 @@ public class UniversalCommandInjectionController {
     // Вспомогательный метод для проверки ОС
     @GetMapping("os-info")
     public String getOSInfo() {
-        return String.format("Операционная система: %s\nWindows: %s\nUnix: %s\nShell: %s",
-                OS, IS_WINDOWS, IS_UNIX, getShell());
+        return String.format("Операционная система: %s\nWindows: %s\nUnix: %s\nShell: %s", OS, IS_WINDOWS, IS_UNIX, getShell());
     }
 
     @GetMapping("/")
