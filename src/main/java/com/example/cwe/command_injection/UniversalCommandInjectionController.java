@@ -8,10 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @RestController
@@ -26,9 +23,9 @@ public class UniversalCommandInjectionController {
     // Получение командной оболочки и флага для выполнения команды в зависимости от ОС
     private static String getShell() {
         if (IS_WINDOWS) {
-            return "cmd /c";
+            return "cmd /c ";
         } else if (IS_UNIX) {
-            return "sh -c";
+            return "sh -c ";
         } else {
             throw new UnsupportedOperationException("Неподдерживаемая операционная система: " + OS);
         }
@@ -37,28 +34,47 @@ public class UniversalCommandInjectionController {
 
     // TODO: problems with encoding in chrome
     @GetMapping("ping")
-    public String executePingCommand(@RequestParam String ip) throws IOException {
-        // http://localhost:7171/ping?ip=127.0.0.2 %26 dir %26 whoami /groups
-        String pingCommand = getShell();
-        if (IS_WINDOWS) {
-            pingCommand += "\"ping -n 1 " + ip + "\"";
-        } else {
-            pingCommand += "\"ping -c 1 " + ip + "\"";
+    public String ping(@RequestParam String ip) {
+        //Runtime.getRuntime().exec() по умолчанию не интерпретирует спецсимволы shell (;, |, &, $, `). Для настоящего RCE нужно явно вызвать shell через /bin/sh -c или cmd.exe /c.
+        //Example: /cmd/ping?ip=127.0.0.1; pwd; id; cat /etc/passwd
+
+        try {
+            String[] command;
+            if (IS_WINDOWS) {
+                command = new String[]{"cmd", "/c", "ping -n 1 " + ip};
+            } else {
+                command = new String[]{"/bin/sh", "-c", "ping -c 1 " + ip};
+            }
+
+            System.out.println("\n\tCommand: " + Arrays.toString(command));
+
+            Process process = Runtime.getRuntime().exec(command);
+
+            // Читаем вывод
+            StringBuilder output = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+
+            // Читаем ошибки
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            while ((line = errorReader.readLine()) != null) {
+                output.append("ERROR: ").append(line).append("\n");
+            }
+
+            int exitCode = process.waitFor();
+            output.append("Exit code: ").append(exitCode);
+
+            return output.toString();
+
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
         }
-
-        Process p = Runtime.getRuntime().exec(pingCommand);
-
-        BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-        String line;
-        StringBuilder sb = new StringBuilder();
-
-        while ((line = input.readLine()) != null) {
-            sb.append(line).append("\n");
-        }
-        input.close();
-        return sb.toString();
     }
+
 
     @GetMapping("pingPb1")
     public String pingProcessUnsafe(@RequestParam String ip) throws IOException {
@@ -66,7 +82,7 @@ public class UniversalCommandInjectionController {
         if (IS_WINDOWS) {
             pingCommand += "\"ping -n 1 " + ip + "\"";
         } else {
-            pingCommand += "\"ping -c 1 " + ip + "\"";
+            pingCommand += "'ping -c 1 " + ip + "'";
         }
 
         ProcessBuilder pb = new ProcessBuilder(pingCommand);

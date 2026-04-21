@@ -53,35 +53,34 @@
         <!--        Чтобы не добавлять каждый раз SaxonHE12-4J через ПКМ, написал сюда.
         Иначе либа постоянно слетает при обновлении пом файла       -->
 
-        <dependency>
-            <groupId>net.sf.saxon</groupId>
-            <artifactId>Saxon-HE</artifactId>
-            <version>12.4</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/SaxonHE12-4J/saxon-he-12.4.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>com.saxonica.xqj</groupId>
-            <artifactId>Saxon-HE-XQJ</artifactId>
-            <version>12.4</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/SaxonHE12-4J/saxon-he-xqj-12.4.jar</systemPath>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>net.sf.saxon</groupId>-->
+<!--            <artifactId>Saxon-HE</artifactId>-->
+<!--            <version>12.4</version>-->
+<!--            <scope>system</scope>-->
+<!--            <systemPath>${project.basedir}/SaxonHE12-4J/saxon-he-12.4.jar</systemPath>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>com.saxonica.xqj</groupId>-->
+<!--            <artifactId>Saxon-HE-XQJ</artifactId>-->
+<!--            <version>12.4</version>-->
+<!--            <scope>system</scope>-->
+<!--            <systemPath>${project.basedir}/SaxonHE12-4J/saxon-he-xqj-12.4.jar</systemPath>-->
+<!--        </dependency>-->
 
         <!-- https://stackoverflow.com/questions/53998702/could-not-find-javax-xml-xqueryxqj-api1-0 -->
-<!--        <dependency>-->
-<!--            <groupId>javax.xml.xquery</groupId>-->
-<!--            <artifactId>xqj-api</artifactId>-->
-<!--            <version>1.0</version>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>javax.xml.xquery</groupId>
             <artifactId>xqj-api</artifactId>
             <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/xqj-api-1.0.jar</systemPath>
-
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>javax.xml.xquery</groupId>-->
+<!--            <artifactId>xqj-api</artifactId>-->
+<!--            <version>1.0</version>-->
+<!--            <scope>system</scope>-->
+<!--            <systemPath>${project.basedir}/xqj-api-1.0.jar</systemPath>-->
+<!--        </dependency>-->
 
         <!-- JAXB API -->
         <dependency>
@@ -154,6 +153,28 @@
                     </excludes>
                 </configuration>
             </plugin>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <!-- ДОБАВЛЕНО: включаем system scope -->
+                            <includeScope>system</includeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 
