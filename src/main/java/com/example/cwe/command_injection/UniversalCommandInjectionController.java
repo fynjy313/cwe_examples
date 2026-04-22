@@ -20,19 +20,7 @@ public class UniversalCommandInjectionController {
     private static final boolean IS_WINDOWS = OS.contains("win");
     private static final boolean IS_UNIX = OS.contains("nix") || OS.contains("nux") || OS.contains("mac");
 
-    // Получение командной оболочки и флага для выполнения команды в зависимости от ОС
-    private static String getShell() {
-        if (IS_WINDOWS) {
-            return "cmd /c ";
-        } else if (IS_UNIX) {
-            return "sh -c ";
-        } else {
-            throw new UnsupportedOperationException("Неподдерживаемая операционная система: " + OS);
-        }
-    }
 
-
-    // TODO: problems with encoding in chrome
     @GetMapping("ping")
     public String ping(@RequestParam String ip) {
         //Runtime.getRuntime().exec() по умолчанию не интерпретирует спецсимволы shell (;, |, &, $, `). Для настоящего RCE нужно явно вызвать shell через /bin/sh -c или cmd.exe /c.
@@ -78,63 +66,90 @@ public class UniversalCommandInjectionController {
 
     @GetMapping("pingPb1")
     public String pingProcessUnsafe(@RequestParam String ip) throws IOException {
-        String pingCommand = getShell();
-        if (IS_WINDOWS) {
-            pingCommand += "\"ping -n 1 " + ip + "\"";
-        } else {
-            pingCommand += "'ping -c 1 " + ip + "'";
+        try {
+            String[] command;
+            if (IS_WINDOWS) {
+                command = new String[]{"cmd", "/c", "ping -n 1 " + ip};
+            } else {
+                command = new String[]{"/bin/sh", "-c", "ping -c 1 " + ip};
+            }
+
+            ProcessBuilder pb = new ProcessBuilder(command);
+            System.out.println(pb.command());
+            Process p = pb.start();
+
+            // Читаем вывод
+            StringBuilder output = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+
+            // Читаем ошибки
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            while ((line = errorReader.readLine()) != null) {
+                output.append("ERROR: ").append(line).append("\n");
+            }
+
+            int exitCode = p.waitFor();
+            output.append("Exit code: ").append(exitCode);
+
+            return output.toString();
+
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
         }
-
-        ProcessBuilder pb = new ProcessBuilder(pingCommand);
-        System.out.println(pb.command());
-        Process p = pb.start();
-
-        BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-        String line;
-        StringBuilder sb = new StringBuilder();
-
-        while ((line = input.readLine()) != null) {
-            sb.append(line).append("\n");
-        }
-        input.close();
-        return sb.toString();
     }
 
     @GetMapping("pingPb2")
     public String pingProcessSafe(@RequestParam String ip) throws IOException {
         List<String> command = new ArrayList<>();
+        try {
+            if (IS_WINDOWS) {
+                command.add("ping");
+                command.add("-n");
+                command.add("1");
+                command.add(ip);
+            } else {
+                command.add("ping");
+                command.add("-c");
+                command.add("1");
+                command.add(ip);
+            }
 
-        if (IS_WINDOWS) {
-            command.add("ping");
-            command.add("-n");
-            command.add("1");
-            command.add(ip);
-        } else {
-            command.add("ping");
-            command.add("-c");
-            command.add("1");
-            command.add(ip);
+            ProcessBuilder pb = new ProcessBuilder(command);
+            System.out.println(pb.command());
+            Process p = pb.start();
+
+            // Читаем вывод
+            StringBuilder output = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+
+            // Читаем ошибки
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            while ((line = errorReader.readLine()) != null) {
+                output.append("ERROR: ").append(line).append("\n");
+            }
+
+            int exitCode = p.waitFor();
+            output.append("Exit code: ").append(exitCode);
+
+            return output.toString();
+
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
         }
-
-        ProcessBuilder pb = new ProcessBuilder(command);
-        System.out.println(pb.command());
-        Process p = pb.start();
-
-        BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-        String line;
-        StringBuilder sb = new StringBuilder();
-
-        while ((line = input.readLine()) != null) {
-            sb.append(line).append("\n");
-        }
-        input.close();
-        return sb.toString();
     }
 
     static Set<String> allowedCommands = new HashSet<>();
-    static Set<String> denyArguments = new HashSet<>();
+    static Set<String> deniedArguments = new HashSet<>();
 
     static {
         allowedCommands.add("pwd");
@@ -154,29 +169,39 @@ public class UniversalCommandInjectionController {
         allowedCommands.add("systeminfo");
         allowedCommands.add("tasklist");
 
-        denyArguments.add("-exec");
-        denyArguments.add("/exec");
+        deniedArguments.add("-exec");
+        deniedArguments.add("/exec");
     }
 
+    /**
+     *
+     * @param command exp: cmd/cmdSafety?command=uname&args=-a  -   good
+     *                exp: cmd/cmdSafety?command=find&args=.&args=-exec&args=whoami%20%5C%3B    -   bad (find . -exec whoami \;)
+     * @param args
+     * @return
+     * @throws IOException
+     */
     @GetMapping("cmdSafety")
-    public String execCommandSafety(@RequestParam(value = "command") String command, @RequestParam(value = "args[]", required = false) List<String> args) throws IOException {
+    public String execCommandSafety(@RequestParam(value = "command") String command,
+                                    @RequestParam(value = "args", required = false) List<String> args) throws IOException {
         final List<String> cmd = new ArrayList<>();
 
         if (command == null || command.isEmpty()) {
-            throw new IllegalArgumentException("Укажите команду");
+            return "Укажите команду";
+            //throw new IllegalArgumentException("Укажите команду");
         }
         command = command.trim().toLowerCase();
 
         if (!allowedCommands.contains(command)) {
-            throw new IllegalArgumentException("Недопустимая команда");
+            return "Недопустимая команда:" + command;
         }
 
         cmd.add(command);
 
         if (args != null) {
             for (String arg : args) {
-                if (denyArguments.contains(arg.trim().toLowerCase())) {
-                    throw new IllegalArgumentException("Недопустимый аргумент");
+                if (deniedArguments.contains(arg.trim().toLowerCase())) {
+                    return "Недопустимый аргумент: " + arg;
                 }
             }
             cmd.addAll(args);
@@ -199,14 +224,22 @@ public class UniversalCommandInjectionController {
         return sb.toString();
     }
 
+
+    /**
+     * exp: cmd/cmdRuntimeSafe?command=uname -a  -   good
+     * exp: cmd/cmdRuntimeSafe?command=find -exec    -   bad
+     * @param command
+     * @return
+     * @throws IOException
+     */
     @GetMapping("cmdRuntimeSafe")
     public String execRuntimeCommandSafety(@RequestParam String command) throws IOException {
         if (command == null || command.isEmpty()) {
-            throw new IllegalArgumentException("Укажите команду");
+            return "Укажите команду";
         }
 
         if (Pattern.matches("^.*(([&|;$><`\\\\!'\"()])|(0x0[Aa])).*$", command)) {
-            throw new IllegalArgumentException("Недопустимая команда");
+            return "Недопустимая команда:" + command;
         }
 
         String strip = command.replaceAll("[&|;$><`\\\\!'\"()]+", "");
@@ -216,11 +249,11 @@ public class UniversalCommandInjectionController {
         final String[] cmd = command.split(" ");
 
         if (!allowedCommands.contains(cmd[0].toLowerCase())) {
-            throw new IllegalArgumentException("Недопустимая команда");
+            return "Недопустимая команда:" + command;
         }
         for (String arg : cmd) {
-            if (denyArguments.contains(arg.toLowerCase())) {
-                throw new IllegalArgumentException("Недопустимый аргумент");
+            if (deniedArguments.contains(arg.toLowerCase())) {
+                return "Недопустимый аргумент: " + arg;
             }
         }
 
@@ -240,7 +273,7 @@ public class UniversalCommandInjectionController {
     // Вспомогательный метод для проверки ОС
     @GetMapping("os-info")
     public String getOSInfo() {
-        return String.format("Операционная система: %s\nWindows: %s\nUnix: %s\nShell: %s", OS, IS_WINDOWS, IS_UNIX, getShell());
+        return String.format("Операционная система: %s\nWindows: %s\nUnix: %s", OS, IS_WINDOWS, IS_UNIX);
     }
 
     @GetMapping("/")
