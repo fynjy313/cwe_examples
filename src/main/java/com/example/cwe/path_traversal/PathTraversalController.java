@@ -19,15 +19,12 @@ import java.util.Date;
 @RequestMapping("path-traversal")
 @SuppressWarnings("unused")
 public class PathTraversalController {
-    //TODO: temp folder for other OS - exp %tempdir%             File resultFile = new File(System.getProperty("java.io.tmpdir") + requestFileName);
-//    static final String BASE_DIRECTORY = "c:\\temp\\";
     static final String BASE_DIRECTORY = System.getProperty("java.io.tmpdir");
     private static final Logger logger = LogManager.getLogger(PathTraversalController.class);
 
-    //TODO: return abs path in response
     @GetMapping("download-file-unsafe")
-    public void downloadImageUnsafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
-        File f = new File(BASE_DIRECTORY + fileName);
+    public void downloadFileUnsafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
+        File f = new File(BASE_DIRECTORY + File.separator + fileName);
 
         if (f.exists() && !f.isDirectory()) {
 
@@ -42,22 +39,22 @@ public class PathTraversalController {
             response.setContentType(mediaType.toString());
             response.setHeader("Content-Disposition", "attachment; filename=" + f.getName());
 
-            response.getOutputStream()
-                    .write(("Resolved file name: " + f + "\n" + "Canonical pathname: "
-                            + f.getCanonicalPath() + "\n\n").getBytes());
+            response.getOutputStream().write(("Resolved file name: " + f + "\n" + "Canonical pathname: "
+                    + f.getCanonicalPath() + "\n\n").getBytes());
             response.getOutputStream().write(Files.readAllBytes(f.toPath()));
             logger.info("File " + fileName + " downloaded.");
         } else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            response.getWriter().write("File doesn't exist or is not a file.");
+            response.getWriter().write("Canonical pathname: " + f.getCanonicalPath() +
+                    " | Resolved file name: " + f.getName() + " - file doesn't exist or is not a file.");
         }
     }
 
 
     @GetMapping("download-file-safe")
-    public void downloadImageSafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
+    public void downloadFileSafe(@RequestParam("filename") String fileName, HttpServletResponse response) throws IOException {
 
-        File f = new File(BASE_DIRECTORY + fileName);
+        File f = new File(BASE_DIRECTORY + File.separator + fileName);
 
         if (!f.getCanonicalPath().toLowerCase().startsWith(BASE_DIRECTORY.toLowerCase())
                 || (!f.exists() && f.isDirectory())) {
@@ -81,7 +78,7 @@ public class PathTraversalController {
         if (file == null) return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("File missing");
         try {
             String requestFileName = file.getOriginalFilename();
-            File resultFile = new File(BASE_DIRECTORY + requestFileName);
+            File resultFile = new File(BASE_DIRECTORY + File.separator + requestFileName);
 
             file.transferTo(resultFile);
 
@@ -106,7 +103,7 @@ public class PathTraversalController {
         }
         requestFileName = requestFileName.replaceAll("\\.\\.", "");
 
-        File resultFile = new File(BASE_DIRECTORY + requestFileName);
+        File resultFile = new File(BASE_DIRECTORY + File.separator + requestFileName);
         file.transferTo(resultFile);
 
         String result = String.format("%s\tFile with requestFileName %s transferred to %s (resultPath: %s)"

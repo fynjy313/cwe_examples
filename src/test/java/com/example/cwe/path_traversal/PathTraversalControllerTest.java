@@ -5,6 +5,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.ResponseEntity;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -28,7 +29,7 @@ public class PathTraversalControllerTest {
     }
 
     @Test
-    void resolveTest(){
+    void resolveTest() {
         String basedir = "C:\\temp\\1";
         String inputDir = "C:\\temp\\1\\..\\2";
 
@@ -61,11 +62,11 @@ public class PathTraversalControllerTest {
     }
 
     @Test
-    void resolveTest2(){
+    void resolveTest2() {
         Path file = Paths.get("C:\\temp\\1\\11\\11.txt\\..\\..\\..\\2\\22.txt");
 
         System.out.println(file.getFileName());
-        System.out.println(file.toAbsolutePath()+"\n");
+        System.out.println(file.toAbsolutePath() + "\n");
         Path fileOld = file.resolveSibling(file.getFileName() + ".old");
         System.out.println(fileOld);
         System.out.println(fileOld.getFileName() + "\n");
@@ -74,6 +75,18 @@ public class PathTraversalControllerTest {
 
         System.out.println(inj.resolve(file));
         System.out.println(file.resolve(inj));
+
+    }
+
+    @Test
+    void testTempDir() {
+        String BASE_DIRECTORY = System.getProperty("java.io.tmpdir");
+        System.out.println(BASE_DIRECTORY);
+
+        String requestFileName = "temp.txt";
+        File resultFile = new File(BASE_DIRECTORY + File.separator + requestFileName);
+        System.out.println(resultFile);
+
 
     }
 
