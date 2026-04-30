@@ -42,11 +42,11 @@ public class PathTraversalController {
             response.getOutputStream().write(("Resolved file name: " + f + "\n" + "Canonical pathname: "
                     + f.getCanonicalPath() + "\n\n").getBytes());
             response.getOutputStream().write(Files.readAllBytes(f.toPath()));
-            logger.info("File " + fileName + " downloaded.");
+            logger.info("File " + f + " downloaded.");
         } else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            response.getWriter().write("Canonical pathname: " + f.getCanonicalPath() +
-                    " | Resolved file name: " + f.getName() + " - file doesn't exist or is not a file.");
+            response.getWriter().write("Resolved file name: " + f + " | Canonical pathname: " + f.getCanonicalPath()
+                    + " - file doesn't exist or is not a file.");
         }
     }
 
@@ -59,7 +59,7 @@ public class PathTraversalController {
         if (!f.getCanonicalPath().toLowerCase().startsWith(BASE_DIRECTORY.toLowerCase())
                 || (!f.exists() && f.isDirectory())) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            response.getWriter().write("File doesn't exist or is not a file.");
+            response.getWriter().write("File " + fileName + " doesn't exist or is not a file.");
         } else {
             MediaType mediaType = MediaTypeFactory.getMediaType(fileName)
                     .orElse(MediaType.APPLICATION_OCTET_STREAM);
@@ -72,18 +72,22 @@ public class PathTraversalController {
         }
     }
 
-
+    //TODO: POC
     @PostMapping("upload-file-unsafe")
-    public ResponseEntity<?> uploadImageUnsafe(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadFileUnsafe(@RequestParam("file") MultipartFile file) {
         if (file == null) return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("File missing");
         try {
             String requestFileName = file.getOriginalFilename();
             File resultFile = new File(BASE_DIRECTORY + File.separator + requestFileName);
 
+            System.out.println(resultFile);
+
             file.transferTo(resultFile);
 
             String result = String.format("%s\tFile with requestFileName %s transferred to %s (resultPath: %s)"
                     , new Date(), requestFileName, resultFile, resultFile.getCanonicalPath());
+
+            System.out.println(result);
 
             return ResponseEntity.ok().body(result);
         } catch (IOException e) {
@@ -93,7 +97,7 @@ public class PathTraversalController {
     }
 
     @PostMapping("upload-file-safe")
-    public ResponseEntity<?> uploadImageSafe(@RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<?> uploadFileSafe(@RequestParam("file") MultipartFile file) throws IOException {
         if (file == null) return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("File missing");
 
         String requestFileName = file.getOriginalFilename();

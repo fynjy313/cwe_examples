@@ -3,6 +3,8 @@
 ## Запуск:
 
 ```shell
+mvn clean package -DskipTests
+java -jar target/cwe_examples-0.0.2-SNAPSHOT.jar
 ```
 
 Данное руководство поможет вам понять причины появления слабостей, их возможное влияние на приложение, а также способы
